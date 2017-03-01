@@ -24,7 +24,6 @@ from DataFileUtil.DataFileUtilServer import MethodContext
 from biokbase.AbstractHandle.Client import AbstractHandle as HandleService  # @UnresolvedImport @IgnorePep8
 from Workspace.baseclient import ServerError as WorkspaceError
 from DataFileUtil.DataFileUtilImpl import HandleError
-from DataFileUtil.authclient import KBaseAuth as _KBaseAuth
 
 
 class DataFileUtilTest(unittest.TestCase):
@@ -32,16 +31,9 @@ class DataFileUtilTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.token = environ.get('KB_AUTH_TOKEN', None)
-        config_file = environ.get('KB_DEPLOYMENT_CONFIG', None)
-        cls.cfg = {}
-        config = ConfigParser()
-        config.read(config_file)
-        for nameval in config.items('DataFileUtil'):
-            cls.cfg[nameval[0]] = nameval[1]
-        authServiceUrl = cls.cfg.get('auth-service-url',
-                "https://kbase.us/services/authorization/Sessions/Login")
-        auth_client = _KBaseAuth(authServiceUrl)
-        cls.user_id = auth_client.get_user(cls.token)
+        cls.user_id = requests.post(
+            'https://kbase.us/services/authorization/Sessions/Login',
+            data='token={}&fields=user_id'.format(cls.token)).json()['user_id']
         # WARNING: don't call any logging methods on the context object,
         # it'll result in a NoneType error
         cls.ctx = MethodContext(None)
@@ -53,9 +45,12 @@ class DataFileUtilTest(unittest.TestCase):
                              'method_params': []
                              }],
                         'authenticated': 1})
-
-        
-        
+        config_file = environ.get('KB_DEPLOYMENT_CONFIG', None)
+        cls.cfg = {}
+        config = ConfigParser()
+        config.read(config_file)
+        for nameval in config.items('DataFileUtil'):
+            cls.cfg[nameval[0]] = nameval[1]
         cls.shockURL = cls.cfg['shock-url']
         cls.ws = Workspace(cls.cfg['workspace-url'], token=cls.token)
         cls.hs = HandleService(url=cls.cfg['handle-service-url'],
@@ -1577,5 +1572,27 @@ class DataFileUtilTest(unittest.TestCase):
                         'file_url': fake_url}
         error_msg = "Error contacting server at {}. Reason: ".format(fake_url)
         self.fail_download_web_file(invalid_input_params, error_msg, startswith=True)
+
+    def test_pack_zip_with_subdirs(self):
+        tmp_dir = os.path.join(self.cfg['scratch'], 'packzipsubdirtest')
+        innerdir = os.path.join(tmp_dir, 'inner')
+        second_innerdir = os.path.join(innerdir, 'sec_inner')
+        os.makedirs(second_innerdir)
+        self.write_file(os.path.join(tmp_dir, 'inzip1.txt'), 'zip1')
+        self.write_file(os.path.join(tmp_dir, 'inzip2.txt'), 'zip2')
+        self.write_file(os.path.join(innerdir, 'innerzip.txt'), 'zipinner')
+        self.write_file(os.path.join(second_innerdir, 'sec_innerzip.txt'), 
+                                                            'sec_zipinner')
+        new_file_path = self.impl.pack_file(
+            self.ctx, {'file_path': tmp_dir + '/target',
+                       'pack': 'zip'})[0]['file_path']
+        self.assertEqual(
+            new_file_path,
+            '/kb/module/work/tmp/packzipsubdirtest/target.zip')
+        with zipfile.ZipFile(new_file_path) as z:
+            self.assertEqual(set(z.namelist()),
+                             set(['inzip1.txt', 'inzip2.txt', 
+                                'inner/innerzip.txt', 
+                                'inner/sec_inner/sec_innerzip.txt']))
 
 
