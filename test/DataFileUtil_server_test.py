@@ -1464,8 +1464,6 @@ class DataFileUtilTest(unittest.TestCase):
         }
         ret1 = self.impl.download_web_file(self.ctx, params)[0]
 
-        print(os.stat(os.path.join("data", "file1.txt")).st_size)
-        print(os.stat(ret1['copy_file_path']).st_size)
         self.assertIsNotNone(ret1['copy_file_path'])
 
     def test_download_direct_link_compress_file(self):
@@ -1478,8 +1476,6 @@ class DataFileUtilTest(unittest.TestCase):
         }
         ret1 = self.impl.download_web_file(self.ctx, params)[0]
 
-        print(os.stat(os.path.join("data", "file1.txt")).st_size)
-        print(os.stat(ret1['copy_file_path']).st_size)
         self.assertIsNotNone(ret1['copy_file_path'])
         self.assertEqual(os.path.basename(ret1['copy_file_path']),
                          'file1.txt')
