@@ -1454,8 +1454,9 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertEqual(os.path.basename(ret1['copy_file_path']),
                          'SP1.fq')
 
-    def test_download_direct_link_web_file(self):
+    def test_download_direct_link_web_file_no_content_length(self):
         # direct download link of 'file1.txt'
+        # Content-length is absent in the header, for this file.
         file_url = 'https://github.com/kbaseapps/DataFileUtil/blob/master/test/data/file1.txt'
 
         params = {
