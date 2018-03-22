@@ -344,7 +344,6 @@ archiving.
         params:
         download_type: download type for web source file
         file_url: file URL
-
         """
         if download_type == 'Direct Download':
             copy_file_path = self._download_direct_download_link(file_url)
@@ -414,7 +413,9 @@ archiving.
             raise ValueError('Error contacting server at {}. Reason: {}'.format(
                                                                   file_url,e.reason))
         else:
-            total_size = int(online_file.info().getheader('Content-Length').strip())
+            total_size = online_file.info().getheader('Content-Length')
+            if total_size is not None:
+                total_size = int(total_size.strip())
             CHUNK = 128 * 1024 * 1024
             downloaded = 0
             with closing(online_file):
@@ -425,10 +426,15 @@ archiving.
                         if not chunk: break
                         output.write(chunk)
                         downloaded += len(chunk)
-                        process = float(downloaded) / total_size * 100
                         used_time = time.time() - start_time
-                        self.log('downloaded: {:.2f}%, '.format(process) +
-                                        'used: {:.2f}s'.format(used_time))
+                        if total_size is not None:
+                            process = float(downloaded) / total_size * 100
+                            self.log('downloaded: {:.2f}%, '.format(process) +
+                                     'used: {:.2f}s'.format(used_time))
+                        else:
+                            process = float(downloaded)
+                            self.log('downloaded: {:.2f}, '.format(process) +
+                                     'used: {:.2f}s'.format(used_time))
 
             self.log('Downloaded file to {}'.format(copy_file_path))
 
@@ -1566,6 +1572,7 @@ archiving.
                              'results is not type dict as required.')
         # return the results
         return [results]
+
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': 'OK',

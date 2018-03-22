@@ -12,7 +12,9 @@ import filecmp
 import tarfile
 import zipfile
 from mock import patch
+from pprint import pprint
 import ftplib
+
 try:
     from ConfigParser import ConfigParser  # py2 @UnusedImport
 except:
@@ -1447,11 +1449,23 @@ class DataFileUtilTest(unittest.TestCase):
             'download_type': 'Direct Download',
             'file_url': file_url
         }
-
         ret1 = self.impl.download_web_file(self.ctx, params)[0]
         self.assertIsNotNone(ret1['copy_file_path'])
         self.assertEqual(os.path.basename(ret1['copy_file_path']),
                          'SP1.fq')
+
+    def test_download_direct_link_web_file_no_content_length(self):
+        # direct download link of 'file1.txt'
+        # Content-length is absent in the header, for this file.
+        file_url = 'https://github.com/kbaseapps/DataFileUtil/blob/master/test/data/file1.txt'
+
+        params = {
+            'download_type': 'Direct Download',
+            'file_url': file_url
+        }
+        ret1 = self.impl.download_web_file(self.ctx, params)[0]
+
+        self.assertIsNotNone(ret1['copy_file_path'])
 
     def test_download_direct_link_compress_file(self):
         # Box direct download link of 'file1.txt.bzip'
@@ -1461,13 +1475,13 @@ class DataFileUtilTest(unittest.TestCase):
             'download_type': 'Direct Download',
             'file_url': file_url
         }
-
         ret1 = self.impl.download_web_file(self.ctx, params)[0]
+
         self.assertIsNotNone(ret1['copy_file_path'])
         self.assertEqual(os.path.basename(ret1['copy_file_path']),
                          'file1.txt')
         self.assertEqual(os.stat(os.path.join("data", "file1.txt")).st_size,
-                    os.stat(ret1['copy_file_path']).st_size) 
+                         os.stat(ret1['copy_file_path']).st_size)
 
     def test_download_direct_link_archive_file(self):
         # Box direct download link of 'zip1.zip'
@@ -1725,5 +1739,8 @@ class DataFileUtilTest(unittest.TestCase):
                              set(['inzip1.txt', 'inzip2.txt', 
                                 'inner/innerzip.txt', 
                                 'inner/sec_inner/sec_innerzip.txt']))
+
+
+
 
 
