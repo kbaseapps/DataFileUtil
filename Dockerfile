@@ -1,4 +1,4 @@
-FROM kbase/kbase:sdkbase.latest
+FROM kbase/kbase:sdkbase2.latest
 MAINTAINER KBase Developer
 # -----------------------------------------
 
@@ -7,17 +7,7 @@ MAINTAINER KBase Developer
 
 # RUN apt-get update
 
-RUN pip install setuptools --upgrade \
-    && apt-get install python-dev libffi-dev libssl-dev \
-    && pip install cffi --upgrade \
-    && pip install pyopenssl --upgrade \
-    && pip install ndg-httpsclient --upgrade \
-    && pip install pyasn1 --upgrade
-
-RUN pip install requests --upgrade \
-    && pip install 'requests[security]' --upgrade \
-    && pip install requests_toolbelt --upgrade \
-    && pip install semver \
+RUN pip install semver \
     && ( [ $(pip show filemagic|grep -c filemagic) -eq 0 ] || pip uninstall -y filemagic ) \
     && pip install python-magic \
     && pip install ftputil \
