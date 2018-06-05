@@ -98,7 +98,6 @@ archiving.
             self.log('File {} is already gzipped, skipping'.format(oldfile))
             return oldfile
         newfile = oldfile + self.GZ
-        self.log('gzipping {} to {}'.format(oldfile, newfile))
         with open(oldfile, 'rb') as s, gzip.open(newfile, 'wb') as t:
             shutil.copyfileobj(s, t)
         return newfile
@@ -110,7 +109,6 @@ archiving.
             self.log('File {} is already gzipped, skipping'.format(oldfile))
             return oldfile
         newfile = oldfile + self.GZ
-        self.log('gzipping (with pigz) {} to {}'.format(oldfile, newfile))
 
         # -f to force overwrite
         # --keep to retain the original file
@@ -156,7 +154,6 @@ archiving.
         if not f:
             f = os.path.basename(d)
         file_path = d + os.sep + f
-        self.log('Packing {} to {}'.format(d, pack))
         # tar is smart enough to not pack its own archive file into the new archive, zip isn't.
         # TODO is there a designated temp files dir in the scratch space? Nope.
         # check dir to archive is not self.tmp or its parent dir for zip
@@ -193,7 +190,6 @@ archiving.
 
     def _decompress(self, openfn, file_path, unpack):
         new_file = self._decompress_file_name(file_path)
-        self.log('decompressing {} to {} ...'.format(file_path, new_file))
         with openfn(file_path, 'rb') as s, tempfile.NamedTemporaryFile(
                 dir=self.tmp, delete=False) as tf:
             # don't create the target file until it's done decompressing
@@ -209,7 +205,6 @@ archiving.
     # of the passed in file open function
     def _pigz_decompress(self, file_path, unpack, n_proc=None):
         new_file = self._decompress_file_name(file_path)
-        self.log('decompressing (with pigz) {} to {} ...'.format(file_path, new_file))
 
         # --keep to retain the original file
         # --processes to limit the number of processes
@@ -248,7 +243,6 @@ archiving.
                 raise ValueError(
                     'File {} is tar file but only uncompress was specified'
                     .format(file_path))
-            self.log('unpacking {} ...'.format(file_path))
             with tarfile.open(file_path) as tf:
                 self._check_members(tf.getnames())
                 tf.extractall(file_dir)
@@ -259,7 +253,6 @@ archiving.
                 raise ValueError(
                     'File {} is zip file but only uncompress was specified'
                     .format(file_path))
-            self.log('unpacking {} ...'.format(file_path))
             with zipfile.ZipFile(file_path) as zf:
                 self._check_members(zf.namelist())
                 zf.extractall(file_dir)
@@ -383,7 +376,6 @@ archiving.
             else:
                 file_name = content_disposition.split('filename="')[-1].split('";')[0]
 
-        self.log('Retrieving file name from url: {}'.format(file_name))
         copy_file_path = os.path.join(self.tmp, file_name)
 
         return copy_file_path
@@ -398,8 +390,6 @@ archiving.
         """
         copy_file_path = self._retrieve_filepath(file_url)
 
-        self.log('Connecting and downloading web source: {}'.format(
-                                                                file_url))
         try:
             online_file = urllib2.urlopen(file_url)
         except urllib2.HTTPError as e:
@@ -429,14 +419,8 @@ archiving.
                         used_time = time.time() - start_time
                         if total_size is not None:
                             process = float(downloaded) / total_size * 100
-                            self.log('downloaded: {:.2f}%, '.format(process) +
-                                     'used: {:.2f}s'.format(used_time))
                         else:
                             process = float(downloaded)
-                            self.log('downloaded: {:.2f}, '.format(process) +
-                                     'used: {:.2f}s'.format(used_time))
-
-            self.log('Downloaded file to {}'.format(copy_file_path))
 
         return copy_file_path
 
@@ -466,15 +450,11 @@ archiving.
         if not file_url.startswith('https://www.dropbox.com/'):
             raise ValueError('Invalid DropBox Link: {}'.format(file_url))
 
-        self.log('Connecting DropBox link: {}'.format(file_url))
         # translate dropbox URL for direct download
         if "?" not in file_url:
             force_download_link = file_url + '?raw=1'
         else:
             force_download_link = file_url.partition('?')[0] + '?raw=1'
-
-        self.log('Generating DropBox direct download link\n' +
-                    ' from: {}\n to: {}'.format(file_url, force_download_link))
 
         copy_file_path = self._download_to_file(force_download_link)
         copy_file_path = self._unpack(copy_file_path, True)
@@ -493,7 +473,6 @@ archiving.
         if not file_url.startswith('https://drive.google.com/'):
             raise ValueError('Invalid Google Drive Link: {}'.format(file_url))
 
-        self.log('Connecting Google Drive link: {}'.format(file_url))
         # translate Google Drive URL for direct download
         force_download_link_prefix = 'https://drive.google.com/uc?export=download&id='
         if file_url.find('drive.google.com/file/d/') != -1:
@@ -505,9 +484,6 @@ archiving.
             error_msg += 'URL: {}'.format(file_url)
             raise ValueError(error_msg)
         force_download_link = force_download_link_prefix + file_id
-
-        self.log('Generating Google Drive direct download link\n'+
-                    ' from: {}\n to: {}'.format(file_url, force_download_link))
 
         copy_file_path = self._download_to_file(force_download_link)
         copy_file_path = self._unpack(copy_file_path, True)
@@ -531,7 +507,6 @@ archiving.
         if not file_url.startswith('ftp://'):
             raise ValueError('Invalid FTP Link: {}'.format(file_url))
 
-        self.log('Connecting FTP link: {}'.format(file_url))
         ftp_url_format = re.match(r'ftp://.*:.*@.*/.*', file_url)
         # process ftp credentials
         if ftp_url_format:
@@ -546,7 +521,6 @@ archiving.
             ftp_file_name = re.search(
                 'ftp://.*:.*@.*/(.+$)', file_url).group(1)
         else:
-            self.log('Setting anonymous FTP user_name and password')
             ftp_user_name = 'anonymous'
             ftp_password = 'anonymous@domain.com'
             ftp_domain = re.search('ftp://(.+?)/', file_url).group(1)
@@ -566,7 +540,6 @@ archiving.
         with open(copy_file_path, 'wb') as output:
             ftp_connection.retrbinary('RETR {}'.format(ftp_file_name),
                                         output.write)
-        self.log('Copied FTP file to: {}'.format(copy_file_path))
 
         copy_file_path = self._unpack(copy_file_path, True)
 
@@ -613,7 +586,6 @@ archiving.
     def __init__(self, config):
         #BEGIN_CONSTRUCTOR
         self.shock_url = config['shock-url']
-        self.log('Shock url: ' + self.shock_url)
         self.shock_effective = self.shock_url
         # note that the unit tests cannot easily test this. Be careful with changes here
         r = requests.get(config['kbase-endpoint'] + '/shock-direct', allow_redirects=False)
@@ -709,7 +681,6 @@ archiving.
         attributes = resp_obj['data']['attributes']
         if os.path.isdir(file_path):
             file_path = os.path.join(file_path, node_file_name)
-        self.log('downloading shock node ' + shock_id + ' into file: ' + str(file_path))
         with open(file_path, 'wb') as fhandle:
             r = requests.get(node_url + '?download_raw', stream=True,
                              headers=headers, allow_redirects=True)
@@ -727,7 +698,6 @@ archiving.
                'attributes': attributes,
                'file_path': file_path,
                'size': size}
-        self.log('downloading done')
         #END shock_to_file
 
         # At some point might do deeper type checking...
@@ -849,7 +819,6 @@ archiving.
         if pack:
             file_path = self._pack(file_path, pack)
         attribs = params.get('attributes')
-        self.log('uploading file ' + str(file_path) + ' into shock node')
         with open(os.path.abspath(file_path), 'rb') as data_file:
             files = {'upload': (os.path.basename(file_path), data_file)}
             if attribs:
@@ -871,7 +840,6 @@ archiving.
                'size': shock_data['file']['size']}
         if params.get('make_handle'):
             out['handle'] = self.make_handle(shock_data, token)
-        self.log('uploading done into shock node: ' + shock_id)
         #END file_to_shock
 
         # At some point might do deeper type checking...
@@ -1518,12 +1486,8 @@ archiving.
         staging_file_path = self._get_staging_file_path(
                                     ctx['user_id'], staging_file_subdir_path)
 
-        self.log('Start downloading staging file: %s' % staging_file_path)
         shutil.copy2(staging_file_path, self.tmp)
         copy_file_path = os.path.join(self.tmp, staging_file_name)
-        self.log('Copied staging file from %s to %s' %
-                 (staging_file_path, copy_file_path))
-
         copy_file_path = self._unpack(copy_file_path, True)
 
         results = {'copy_file_path': copy_file_path}
@@ -1560,7 +1524,6 @@ archiving.
         file_url = params.get('file_url')
         download_type = params.get('download_type')
 
-        self.log('Start downloading web file from: {}'.format(file_url))
         copy_file_path = self._download_file(download_type, file_url)
 
         results = {'copy_file_path': copy_file_path}
