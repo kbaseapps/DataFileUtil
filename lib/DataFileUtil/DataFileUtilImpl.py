@@ -388,6 +388,22 @@ archiving.
 
         return copy_file_path
 
+    def _wget_dl(self, url, destination_file, try_number=20, time_out=1800):
+        """
+        _wget_dl: run wget command tool
+        """
+
+        download_state = 1
+        command=["wget", "-c", "--no-verbose", "-O", destination_file,
+                 "-t", str(try_number), "-T", str(time_out), url]
+        try:
+            download_state=subprocess.call(command)
+        except Exception as e:
+            self.log('Error running wget')
+            self.log(e)
+
+        return download_state
+
     def _download_to_file(self, file_url):
         """
         _download_to_file: download url content to file
@@ -400,43 +416,22 @@ archiving.
 
         self.log('Connecting and downloading web source: {}'.format(
                                                                 file_url))
-        try:
-            online_file = urllib2.urlopen(file_url)
-        except urllib2.HTTPError as e:
-            self.log('Server error on file retrieval:')
-            self.log(str(e))
-            raise ValueError('Error contacting server at {}. Code: {} Reason: {}'.format(
-                                                                  file_url, e.code, e.reason))
-        except urllib2.URLError as e:
-            self.log('Server error on file retrieval:')
-            self.log(str(e))
-            raise ValueError('Error contacting server at {}. Reason: {}'.format(
-                                                                  file_url,e.reason))
-        else:
-            total_size = online_file.info().getheader('Content-Length')
-            if total_size is not None:
-                total_size = int(total_size.strip())
-            CHUNK = 128 * 1024 * 1024
-            downloaded = 0
-            with closing(online_file):
-                with open(copy_file_path, 'wb') as output:
-                    start_time = time.time()
-                    while True:
-                        chunk = online_file.read(CHUNK)
-                        if not chunk: break
-                        output.write(chunk)
-                        downloaded += len(chunk)
-                        used_time = time.time() - start_time
-                        if total_size is not None:
-                            process = float(downloaded) / total_size * 100
-                            self.log('downloaded: {:.2f}%, '.format(process) +
-                                     'used: {:.2f}s'.format(used_time))
-                        else:
-                            process = float(downloaded)
-                            self.log('downloaded: {:.2f}, '.format(process) +
-                                     'used: {:.2f}s'.format(used_time))
 
-            self.log('Downloaded file to {}'.format(copy_file_path))
+        success = False
+        attempts = 0
+        while attempts < 3 and not success:
+            try:
+                self._wget_dl(file_url, copy_file_path)
+                success = True
+            except Exception as e:
+                print 'Exception Error: {}'.format(e)
+                print 'Failed to download. Attempting to rerun'
+                attempts += 1
+
+        if not success:
+            raise ValueError('Dowload Failed!')
+
+        self.log('Downloaded file to {}'.format(copy_file_path))
 
         return copy_file_path
 
