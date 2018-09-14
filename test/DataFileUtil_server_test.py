@@ -1599,6 +1599,20 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertEqual(os.stat(os.path.join("data", "file1.txt")).st_size,
                     os.stat(ret1['copy_file_path']).st_size)
 
+    def test_download_google_drive_link_large_uncompress_file(self):
+        file_url = 'https://drive.google.com/open?id=1WBni9AcU7AHWY72amXBg7Dxb0d2RUGch'
+        params = {
+            'download_type': 'Google Drive',
+            'file_url': file_url
+        }
+
+        ret1 = self.impl.download_web_file(self.ctx, params)[0]
+        self.assertIsNotNone(ret1['copy_file_path'])
+        self.assertEqual(os.path.basename(ret1['copy_file_path']),
+                         'Chlamydomonas_reinhardtii.v3.1.35.nonchromosomal.dat')
+        self.assertEqual(os.stat(ret1['copy_file_path']).st_size,
+                         200268636)
+
     def test_download_google_drive_link_archive_file(self):
         # google drive link of 'zip1.zip'
         file_url = 'https://drive.google.com/open?'
