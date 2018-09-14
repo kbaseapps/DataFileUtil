@@ -26,7 +26,6 @@ from contextlib import closing
 import ftplib
 import subprocess
 import copy
-import pickle
 
 class ShockException(Exception):
     pass
