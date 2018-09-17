@@ -362,14 +362,14 @@ archiving.
 
         return copy_file_path
 
-    def _retrieve_filepath(self, file_url):
+    def _retrieve_filepath(self, file_url, cookies=None):
         """
         _retrieve_filepath: retrieve file name from download URL and return local file path
 
         """
 
         try:
-            response = requests.get(file_url, stream=True)
+            response = requests.get(file_url, cookies=cookies, stream=True)
         except BaseException as error:
             error_msg = 'Cannot connect to URL: {}\n'.format(file_url)
             error_msg += 'Exception: {}'.format(error)
@@ -476,6 +476,42 @@ archiving.
 
         return copy_file_path
 
+    def _get_google_confirm_token(self, response):
+        """
+        _get_google_confirm_token: get Google drive confirm token for large file
+        """
+        for key, value in response.cookies.items():
+            if key.startswith('download_warning'):
+                return value
+
+        return None
+
+    def _download_google_drive_to_file(self, file_url, cookies=None):
+        """
+        _download_google_drive_to_file: download url content to file
+        params:
+        file_url: direct download URL
+        """
+        copy_file_path = self._retrieve_filepath(file_url, cookies)
+
+        self.log('Connecting and downloading web source: {}'.format(
+                                                                file_url))
+
+        try:
+            response = requests.get(file_url, cookies=cookies, stream=True)
+        except BaseException as error:
+            error_msg = 'Cannot connect to URL: {}\n'.format(file_url)
+            error_msg += 'Exception: {}'.format(error)
+            raise ValueError(error_msg)
+        else:
+            with open(copy_file_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=1024):
+                    f.write(chunk)
+
+            self.log('Downloaded file to {}'.format(copy_file_path))
+
+        return copy_file_path
+
     def _download_google_drive_link(self, file_url):
         """
         _download_google_drive_link: Google Drive download link handler
@@ -490,7 +526,8 @@ archiving.
 
         self.log('Connecting Google Drive link: {}'.format(file_url))
         # translate Google Drive URL for direct download
-        force_download_link_prefix = 'https://drive.google.com/uc?export=download&id='
+        force_download_link_prefix = 'https://docs.google.com/uc?export=download'
+
         if file_url.find('drive.google.com/file/d/') != -1:
             file_id = file_url.partition('/d/')[-1].partition('/')[0]
         elif file_url.find('drive.google.com/open?id=') != -1:
@@ -499,12 +536,20 @@ archiving.
             error_msg = 'Unexpected Google Drive share link.\n'
             error_msg += 'URL: {}'.format(file_url)
             raise ValueError(error_msg)
-        force_download_link = force_download_link_prefix + file_id
 
-        self.log('Generating Google Drive direct download link\n'+
-                    ' from: {}\n to: {}'.format(file_url, force_download_link))
+        force_download_link = force_download_link_prefix + '&id={}'.format(file_id)
 
-        copy_file_path = self._download_to_file(force_download_link)
+        session = requests.Session()
+        response = session.get(force_download_link)
+        confirm_token = self._get_google_confirm_token(response)
+
+        if confirm_token:
+            force_download_link = force_download_link_prefix + '&confirm={}&id={}'.format(confirm_token, file_id)
+
+        self.log('Generating Google Drive direct download link\n' +
+                 ' from: {}\n to: {}'.format(file_url, force_download_link))
+
+        copy_file_path = self._download_google_drive_to_file(force_download_link, response.cookies)
         copy_file_path = self._unpack(copy_file_path, True)
 
         return copy_file_path
