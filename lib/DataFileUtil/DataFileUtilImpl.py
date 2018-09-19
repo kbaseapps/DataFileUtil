@@ -55,9 +55,9 @@ archiving.
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.0.22"
+    VERSION = "0.0.24"
     GIT_URL = "https://github.com/Tianhao-Gu/DataFileUtil.git"
-    GIT_COMMIT_HASH = "c4733f9c81bcc8228c63ceeb2c0540df9e61153e"
+    GIT_COMMIT_HASH = "782a137064c912cf1eda2b9d94e738d67cee43b0"
 
     #BEGIN_CLASS_HEADER
 
@@ -1567,7 +1567,6 @@ archiving.
                              'results is not type dict as required.')
         # return the results
         return [results]
-
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': 'OK',
