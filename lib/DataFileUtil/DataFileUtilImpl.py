@@ -653,13 +653,13 @@ archiving.
     def __init__(self, config):
         #BEGIN_CONSTRUCTOR
         self.shock_url = config['shock-url']
-        self.log('Shock url: ' + self.shock_url)
         self.shock_effective = self.shock_url
         # note that the unit tests cannot easily test this. Be careful with changes here
         r = requests.get(config['kbase-endpoint'] + '/shock-direct', allow_redirects=False)
         if r.status_code == 302:
             self.log('Using direct shock url for transferring files')
             self.shock_effective = r.headers['Location']
+        self.log('Shock url: ' + self.shock_effective)
         self.handle_url = config['handle-service-url']
         self.ws_url = config['workspace-url']
         self.scratch = config['scratch']
@@ -729,7 +729,8 @@ archiving.
             self.log('Fetching info for handle: '+handle_id)
             hs = HandleService(self.handle_url, token=token)
             handles = hs.hids_to_handles([handle_id])
-            shock_url = handles[0]['url']
+            # don't override direct url if provided
+            #shock_url = handles[0]['url']
             shock_id = handles[0]['id']
 
         file_path = params.get('file_path')
