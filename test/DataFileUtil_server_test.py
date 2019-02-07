@@ -1264,6 +1264,7 @@ class DataFileUtilTest(unittest.TestCase):
 
     @patch.object(DataFileUtil, "STAGING_USER_FILE_PREFIX", new='/kb/module/work/tmp/')
     def test_download_staging_file(self):
+        # testing STAGING_USER_FILE_PREFIX/sub_dir/file_name
         tmp_dir = self.cfg['scratch']
         test_file = "file1.txt"
         unpack_dir = os.path.join(tmp_dir, 'test_download_staging_file')
@@ -1274,7 +1275,6 @@ class DataFileUtilTest(unittest.TestCase):
 
         params = {
             'staging_file_subdir_path': 'test_download_staging_file/file1.txt',
-            'global_permission': False
         }
 
         ret1 = self.impl.download_staging_file(
@@ -1285,6 +1285,7 @@ class DataFileUtilTest(unittest.TestCase):
 
     @patch.object(DataFileUtil, "STAGING_USER_FILE_PREFIX", new='/kb/module/work/tmp/')
     def test_download_staging_file_compressed_file(self):
+        # testing STAGING_USER_FILE_PREFIX/sub_dir/file_name
         tmp_dir = self.cfg['scratch']
         test_file = "file1.txt.gz"
         unpack_dir = os.path.join(tmp_dir, 'test_download_compressed_staging_file')
@@ -1294,8 +1295,7 @@ class DataFileUtilTest(unittest.TestCase):
         shutil.copy('data/'+test_file, test_file_path)
 
         params = {
-            'staging_file_subdir_path': 'test_download_compressed_staging_file/file1.txt.gz',
-            'global_permission': False
+            'staging_file_subdir_path': 'test_download_compressed_staging_file/file1.txt.gz'
         }
 
         ret1 = self.impl.download_staging_file(
@@ -1306,6 +1306,7 @@ class DataFileUtilTest(unittest.TestCase):
 
     @patch.object(DataFileUtil, "STAGING_GLOBAL_FILE_PREFIX", new='/kb/module/work/tmp/')
     def test_download_staging_file_archive_file(self):
+        # testing STAGING_GLOBAL_FILE_PREFIX/user_id/sub_dir/file_name
         tmp_dir = self.cfg['scratch']
         test_file = "zip1.zip"
         unpack_dir = os.path.join(tmp_dir, self.ctx['user_id'], 'test_download_archive_staging_file')
