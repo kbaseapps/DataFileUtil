@@ -1273,7 +1273,8 @@ class DataFileUtilTest(unittest.TestCase):
         shutil.copy('data/'+test_file, test_file_path)
 
         params = {
-            'staging_file_subdir_path': 'test_download_staging_file/file1.txt'
+            'staging_file_subdir_path': 'test_download_staging_file/file1.txt',
+            'global_permission': False
         }
 
         ret1 = self.impl.download_staging_file(
@@ -1293,7 +1294,8 @@ class DataFileUtilTest(unittest.TestCase):
         shutil.copy('data/'+test_file, test_file_path)
 
         params = {
-            'staging_file_subdir_path': 'test_download_compressed_staging_file/file1.txt.gz'
+            'staging_file_subdir_path': 'test_download_compressed_staging_file/file1.txt.gz',
+            'global_permission': False
         }
 
         ret1 = self.impl.download_staging_file(
@@ -1306,7 +1308,7 @@ class DataFileUtilTest(unittest.TestCase):
     def test_download_staging_file_archive_file(self):
         tmp_dir = self.cfg['scratch']
         test_file = "zip1.zip"
-        unpack_dir = os.path.join(tmp_dir, 'test_download_archive_staging_file')
+        unpack_dir = os.path.join(tmp_dir, self.ctx['user_id'], 'test_download_archive_staging_file')
         test_file_path = os.path.join(unpack_dir, test_file)
         if not os.path.exists(unpack_dir):
             os.makedirs(unpack_dir)

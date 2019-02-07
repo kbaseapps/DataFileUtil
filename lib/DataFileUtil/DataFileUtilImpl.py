@@ -78,7 +78,8 @@ archiving.
     ROOT = re.compile(r'^[\\' + os.sep + ']+$')
 
     # staging file prefix
-    STAGING_FILE_PREFIX = '/staging'
+    STAGING_GLOBAL_FILE_PREFIX = '/data/bulk/'
+    STAGING_USER_FILE_PREFIX = '/staging'
 
     def log(self, message, prefix_newline=False):
         print(('\n' if prefix_newline else '') +
@@ -328,14 +329,21 @@ archiving.
         return str(object_info[6]) + '/' + str(object_info[0]) + \
             '/' + str(object_info[4])
 
-    def _get_staging_file_path(self, staging_file_subdir_path):
+    def _get_staging_file_path(self, token_user, staging_file_subdir_path, global_permission=True):
         """
         _get_staging_file_path: return staging area file path
 
-        directory pattern: /staging/sub_dir/file_name
+        directory pattern:
+            with global_permission: /data/bulk/user_name/sub_dir/file_name
+            without global permission: /staging/sub_dir/file_name (preferred)
 
         """
-        return os.path.join(self.STAGING_FILE_PREFIX, staging_file_subdir_path.strip('/'))
+
+        if global_permission:
+            return os.path.join(self.STAGING_GLOBAL_FILE_PREFIX, token_user,
+                                staging_file_subdir_path.strip('/'))
+        else:
+            return os.path.join(self.STAGING_USER_FILE_PREFIX, staging_file_subdir_path.strip('/'))
 
     def _download_file(self, download_type, file_url):
         """
@@ -1554,9 +1562,12 @@ archiving.
             error_msg = "missing 'staging_file_subdir_path' parameter"
             raise ValueError(error_msg)
 
+        global_permission = params.get('global_permission', True)
+
         staging_file_subdir_path = params.get('staging_file_subdir_path')
         staging_file_name = os.path.basename(staging_file_subdir_path)
-        staging_file_path = self._get_staging_file_path(staging_file_subdir_path)
+        staging_file_path = self._get_staging_file_path(ctx['user_id'], staging_file_subdir_path,
+                                                        global_permission=global_permission)
 
         self.log('Start downloading staging file: %s' % staging_file_path)
         shutil.copy2(staging_file_path, self.tmp)
