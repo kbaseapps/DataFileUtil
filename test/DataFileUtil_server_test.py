@@ -1262,7 +1262,7 @@ class DataFileUtilTest(unittest.TestCase):
         error_msg = "missing 'staging_file_subdir_path' parameter"
         self.fail_download_staging_file(invalid_input_params, error_msg)
 
-    @patch.object(DataFileUtil, "STAGING_FILE_PREFIX", new='/kb/module/work/tmp/')
+    @patch.object(DataFileUtil, "STAGING_USER_FILE_PREFIX", new='/kb/module/work/tmp/')
     def test_download_staging_file(self):
         tmp_dir = self.cfg['scratch']
         test_file = "file1.txt"
@@ -1283,7 +1283,7 @@ class DataFileUtilTest(unittest.TestCase):
             )[0]
         self.assertRegexpMatches(ret1['copy_file_path'], tmp_dir + '/.*/' + 'file1.txt')
 
-    @patch.object(DataFileUtil, "STAGING_FILE_PREFIX", new='/kb/module/work/tmp/')
+    @patch.object(DataFileUtil, "STAGING_USER_FILE_PREFIX", new='/kb/module/work/tmp/')
     def test_download_staging_file_compressed_file(self):
         tmp_dir = self.cfg['scratch']
         test_file = "file1.txt.gz"
@@ -1304,7 +1304,7 @@ class DataFileUtilTest(unittest.TestCase):
             )[0]
         self.assertRegexpMatches(ret1['copy_file_path'], tmp_dir + '/.*/' + 'file1.txt')
 
-    @patch.object(DataFileUtil, "STAGING_FILE_PREFIX", new='/kb/module/work/tmp/')
+    @patch.object(DataFileUtil, "STAGING_GLOBAL_FILE_PREFIX", new='/kb/module/work/tmp/')
     def test_download_staging_file_archive_file(self):
         tmp_dir = self.cfg['scratch']
         test_file = "zip1.zip"
