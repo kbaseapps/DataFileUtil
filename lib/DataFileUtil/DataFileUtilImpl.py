@@ -78,7 +78,8 @@ archiving.
     ROOT = re.compile(r'^[\\' + os.sep + ']+$')
 
     # staging file prefix
-    STAGING_FILE_PREFIX = '/data/bulk/'
+    STAGING_GLOBAL_FILE_PREFIX = '/data/bulk/'
+    STAGING_USER_FILE_PREFIX = '/staging/'
 
     def log(self, message, prefix_newline=False):
         print(('\n' if prefix_newline else '') +
@@ -332,10 +333,18 @@ archiving.
         """
         _get_staging_file_path: return staging area file path
 
-        directory pattern: /data/bulk/user_name/file_name
-
+        directory pattern:
+            perfered to return user specific path: /staging/sub_dir/file_name
+            if this path is not visible to user, use global bulk path: /data/bulk/user_name/sub_dir/file_name
         """
-        return self.STAGING_FILE_PREFIX + token_user + '/' + staging_file_subdir_path
+
+        user_path = os.path.join(self.STAGING_USER_FILE_PREFIX, staging_file_subdir_path.strip('/'))
+
+        if os.path.exists(user_path):
+            return user_path
+        else:
+            return os.path.join(self.STAGING_GLOBAL_FILE_PREFIX, token_user,
+                                staging_file_subdir_path.strip('/'))
 
     def _download_file(self, download_type, file_url):
         """
@@ -926,8 +935,8 @@ archiving.
         """
         Using the same logic as unpacking a Shock file, this method will cause
         any bzip or gzip files to be uncompressed, and then unpack tar and zip
-        archive files (uncompressing gzipped or bzipped archive files if 
-        necessary). If the file is an archive, it will be unbundled into the 
+        archive files (uncompressing gzipped or bzipped archive files if
+        necessary). If the file is an archive, it will be unbundled into the
         directory containing the original output file.
         :param params: instance of type "UnpackFileParams" -> structure:
            parameter "file_path" of String
@@ -1556,8 +1565,7 @@ archiving.
 
         staging_file_subdir_path = params.get('staging_file_subdir_path')
         staging_file_name = os.path.basename(staging_file_subdir_path)
-        staging_file_path = self._get_staging_file_path(
-                                    ctx['user_id'], staging_file_subdir_path)
+        staging_file_path = self._get_staging_file_path(ctx['user_id'], staging_file_subdir_path)
 
         self.log('Start downloading staging file: %s' % staging_file_path)
         shutil.copy2(staging_file_path, self.tmp)

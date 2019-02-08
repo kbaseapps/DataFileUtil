@@ -237,9 +237,9 @@ class DataFileUtilTest(unittest.TestCase):
             output.seek(size_3GB)
             output.write('0')
 
-        print ('--- generating a 3GB zipfile ---\n' +
-               '--- to speed up your local test, ' +
-               'please comment out test_unpack_large_zip ---')
+        print('--- generating a 3GB zipfile ---\n' +
+              '--- to speed up your local test, ' +
+              'please comment out test_unpack_large_zip ---')
 
         compress_size = 0
         count = 0
@@ -1262,19 +1262,19 @@ class DataFileUtilTest(unittest.TestCase):
         error_msg = "missing 'staging_file_subdir_path' parameter"
         self.fail_download_staging_file(invalid_input_params, error_msg)
 
-    @patch.object(DataFileUtil, "STAGING_FILE_PREFIX", new='/kb/module/work/tmp/')
+    @patch.object(DataFileUtil, "STAGING_USER_FILE_PREFIX", new='/kb/module/work/tmp/')
     def test_download_staging_file(self):
+        # testing STAGING_USER_FILE_PREFIX/sub_dir/file_name
         tmp_dir = self.cfg['scratch']
         test_file = "file1.txt"
-        unpack_dir = os.path.join(tmp_dir, self.ctx['user_id'], 
-                                            'test_download_staging_file')
+        unpack_dir = os.path.join(tmp_dir, 'test_download_staging_file')
         test_file_path = os.path.join(unpack_dir, test_file)
         if not os.path.exists(unpack_dir):
             os.makedirs(unpack_dir)
         shutil.copy('data/'+test_file, test_file_path)
 
         params = {
-            'staging_file_subdir_path': 'test_download_staging_file/file1.txt'
+            'staging_file_subdir_path': 'test_download_staging_file/file1.txt',
         }
 
         ret1 = self.impl.download_staging_file(
@@ -1283,12 +1283,12 @@ class DataFileUtilTest(unittest.TestCase):
             )[0]
         self.assertRegexpMatches(ret1['copy_file_path'], tmp_dir + '/.*/' + 'file1.txt')
 
-    @patch.object(DataFileUtil, "STAGING_FILE_PREFIX", new='/kb/module/work/tmp/')
+    @patch.object(DataFileUtil, "STAGING_USER_FILE_PREFIX", new='/kb/module/work/tmp/')
     def test_download_staging_file_compressed_file(self):
+        # testing STAGING_USER_FILE_PREFIX/sub_dir/file_name
         tmp_dir = self.cfg['scratch']
         test_file = "file1.txt.gz"
-        unpack_dir = os.path.join(tmp_dir, self.ctx['user_id'], 
-                                        'test_download_compressed_staging_file')
+        unpack_dir = os.path.join(tmp_dir, 'test_download_compressed_staging_file')
         test_file_path = os.path.join(unpack_dir, test_file)
         if not os.path.exists(unpack_dir):
             os.makedirs(unpack_dir)
@@ -1304,12 +1304,12 @@ class DataFileUtilTest(unittest.TestCase):
             )[0]
         self.assertRegexpMatches(ret1['copy_file_path'], tmp_dir + '/.*/' + 'file1.txt')
 
-    @patch.object(DataFileUtil, "STAGING_FILE_PREFIX", new='/kb/module/work/tmp/')
+    @patch.object(DataFileUtil, "STAGING_GLOBAL_FILE_PREFIX", new='/kb/module/work/tmp/')
     def test_download_staging_file_archive_file(self):
+        # testing STAGING_GLOBAL_FILE_PREFIX/user_id/sub_dir/file_name
         tmp_dir = self.cfg['scratch']
         test_file = "zip1.zip"
-        unpack_dir = os.path.join(tmp_dir, self.ctx['user_id'], 
-                                                'test_download_archive_staging_file')
+        unpack_dir = os.path.join(tmp_dir, self.ctx['user_id'], 'test_download_archive_staging_file')
         test_file_path = os.path.join(unpack_dir, test_file)
         if not os.path.exists(unpack_dir):
             os.makedirs(unpack_dir)
@@ -1324,13 +1324,12 @@ class DataFileUtilTest(unittest.TestCase):
                 params
             )[0]
         self.assertRegexpMatches(ret1['copy_file_path'], tmp_dir + '/.*/' + 'zip1.zip')
-        self.assertTrue(set(['tar1', 'zip1.zip']) <= 
-                    set(os.listdir(os.path.dirname(ret1['copy_file_path']))))
+        self.assertTrue(set(['tar1', 'zip1.zip']) <=
+                        set(os.listdir(os.path.dirname(ret1['copy_file_path']))))
         self.assertEqual(os.stat(os.path.join("data", "zip1.zip")).st_size,
-                            os.stat(ret1['copy_file_path']).st_size)
+                         os.stat(ret1['copy_file_path']).st_size)
 
-    def fail_download_web_file(self, params, error, 
-                                        exception=ValueError, startswith=False):
+    def fail_download_web_file(self, params, error, exception=ValueError, startswith=False):
         with self.assertRaises(exception) as context:
             self.impl.download_web_file(self.ctx, params)
         if startswith:
@@ -1338,7 +1337,7 @@ class DataFileUtilTest(unittest.TestCase):
                             "Error message {} does not start with {}".format(
                                 str(context.exception.message),
                                 error))
-        else:    
+        else:
             self.assertEqual(error, str(context.exception.message))
 
     def test_fail_download_web_file(self):
@@ -1348,14 +1347,14 @@ class DataFileUtilTest(unittest.TestCase):
 
         invalid_input_params = {'download_type': 'download_type_str'}
         error_msg = "missing 'file_url' parameter"
-        self.fail_download_web_file(invalid_input_params, error_msg)   
+        self.fail_download_web_file(invalid_input_params, error_msg)
 
         invalid_input_params = {
                         'download_type': 'invalid_download_type',
                         'file_url': 'http://www.google.com'}
         error_msg = "[invalid_download_type] download_type is invalid.\n"
         error_msg += "Please use one of ['Direct Download', 'FTP', 'DropBox', 'Google Drive']"
-        self.fail_download_web_file(invalid_input_params, error_msg) 
+        self.fail_download_web_file(invalid_input_params, error_msg)
 
         invalid_input_params = {
                         'download_type': 'Direct Download',
@@ -1371,7 +1370,6 @@ class DataFileUtilTest(unittest.TestCase):
         error_msg = "Invalid Google Drive Link: http://www.google.com"
         self.fail_download_web_file(invalid_input_params, error_msg)
 
-
         invalid_input_params = {
                         'download_type': 'Google Drive',
                         'file_url': 'https://drive.google.com/invalid_link'}
@@ -1385,7 +1383,7 @@ class DataFileUtilTest(unittest.TestCase):
                         'download_type': 'DropBox',
                         'file_url': 'http://www.dropbox.com'}
         error_msg = "Invalid DropBox Link: http://www.dropbox.com"
-        self.fail_download_web_file(invalid_input_params, error_msg) 
+        self.fail_download_web_file(invalid_input_params, error_msg)
 
     def test_fail_download_web_file_ftp(self):
         # invalid FTP params
@@ -1393,7 +1391,7 @@ class DataFileUtilTest(unittest.TestCase):
                         'download_type': 'FTP',
                         'file_url': 'http://www.google.com'}
         error_msg = "Invalid FTP Link: http://www.google.com"
-        self.fail_download_web_file(invalid_input_params, error_msg)  
+        self.fail_download_web_file(invalid_input_params, error_msg)
 
         fake_ftp_url = 'ftp://FAKE_USER:FAKE_PASSWORD'
         fake_ftp_url += '@ftp.com/Sample1.fastq'
@@ -1401,14 +1399,13 @@ class DataFileUtilTest(unittest.TestCase):
                         'download_type': 'FTP',
                         'file_url': fake_ftp_url}
         error_msg = "Currently we only support anonymous FTP"
-        self.fail_download_web_file(invalid_input_params, error_msg)  
+        self.fail_download_web_file(invalid_input_params, error_msg)
 
         invalid_input_params = {
                         'download_type': 'FTP',
                         'file_url': 'ftp://FAKE_SERVER/Sample1.fastq'}
         error_msg = "Cannot connect:"
-        self.fail_download_web_file(invalid_input_params, error_msg, 
-                                                            startswith=True) 
+        self.fail_download_web_file(invalid_input_params, error_msg, startswith=True)
 
         fake_ftp_url = 'ftp://anonymous:FAKE_PASSWORD'
         fake_ftp_url += '@ftp.dlptest.com/24_Hour/Sample1.fastq'
@@ -1416,15 +1413,14 @@ class DataFileUtilTest(unittest.TestCase):
                         'download_type': 'FTP',
                         'file_url': fake_ftp_url}
         error_msg = "Cannot login:"
-        self.fail_download_web_file(invalid_input_params, error_msg, 
-                                                            startswith=True)  
+        self.fail_download_web_file(invalid_input_params, error_msg, startswith=True)
 
         invalid_input_params = {
                         'download_type': 'FTP',
                         'file_url': 'ftp://ftp.uconn.edu/48_hour/nonexist.txt'}
         error_msg = "File nonexist.txt does NOT exist in FTP path: "
         error_msg += "ftp.uconn.edu/48_hour"
-        self.fail_download_web_file(invalid_input_params, error_msg) 
+        self.fail_download_web_file(invalid_input_params, error_msg)
 
     def test_download_direct_link_uncompress_file(self):
         # Box direct download link of 'file1.txt'
@@ -1440,7 +1436,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertEqual(os.path.basename(ret1['copy_file_path']),
                          'file1.txt')
         self.assertEqual(os.stat(os.path.join("data", "file1.txt")).st_size,
-                    os.stat(ret1['copy_file_path']).st_size)
+                         os.stat(ret1['copy_file_path']).st_size)
 
     def test_download_direct_link_with_no_content_disposition(self):
         # direct download link with no 'content-disposition' header
@@ -1496,10 +1492,10 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertIsNotNone(ret1['copy_file_path'])
         self.assertEqual(os.path.basename(ret1['copy_file_path']),
                          'zip1.zip')
-        self.assertTrue(set(['tar1', 'zip1.zip']) <= 
-                    set(os.listdir(os.path.dirname(ret1['copy_file_path']))))
+        self.assertTrue(set(['tar1', 'zip1.zip']) <=
+                        set(os.listdir(os.path.dirname(ret1['copy_file_path']))))
         self.assertEqual(os.stat(os.path.join("data", "zip1.zip")).st_size,
-                    os.stat(ret1['copy_file_path']).st_size) 
+                         os.stat(ret1['copy_file_path']).st_size)
 
     def test_download_dropbox_link_uncompress_file(self):
         # dropbox link of 'file1.txt'
@@ -1515,7 +1511,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertEqual(os.path.basename(ret1['copy_file_path']),
                          'file1.txt')
         self.assertEqual(os.stat(os.path.join("data", "file1.txt")).st_size,
-                    os.stat(ret1['copy_file_path']).st_size)
+                         os.stat(ret1['copy_file_path']).st_size)
 
     def test_download_dropbox_link_missing_question_mark(self):
         # dropbox link missing question mark of 'file1.txt'
@@ -1531,7 +1527,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertEqual(os.path.basename(ret1['copy_file_path']),
                          'file1.txt')
         self.assertEqual(os.stat(os.path.join("data", "file1.txt")).st_size,
-                    os.stat(ret1['copy_file_path']).st_size)
+                         os.stat(ret1['copy_file_path']).st_size)
 
     def test_download_dropbox_link_compress_file(self):
         # dropbox link of 'file1.txt.gz'
@@ -1547,7 +1543,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertEqual(os.path.basename(ret1['copy_file_path']),
                          'file1.txt')
         self.assertEqual(os.stat(os.path.join("data", "file1.txt")).st_size,
-                    os.stat(ret1['copy_file_path']).st_size)
+                         os.stat(ret1['copy_file_path']).st_size)
 
     def test_download_dropbox_link_archive_file(self):
         # dropbox link of 'zip1.zip'
@@ -1562,10 +1558,10 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertIsNotNone(ret1['copy_file_path'])
         self.assertEqual(os.path.basename(ret1['copy_file_path']),
                          'zip1.zip')
-        self.assertTrue(set(['tar1', 'zip1.zip']) <= 
-                    set(os.listdir(os.path.dirname(ret1['copy_file_path']))))
+        self.assertTrue(set(['tar1', 'zip1.zip']) <=
+                        set(os.listdir(os.path.dirname(ret1['copy_file_path']))))
         self.assertEqual(os.stat(os.path.join("data", "zip1.zip")).st_size,
-                    os.stat(ret1['copy_file_path']).st_size)
+                         os.stat(ret1['copy_file_path']).st_size)
 
     def test_download_google_drive_link_uncompress_file(self):
         # google drive link of 'file1.txt'
@@ -1581,7 +1577,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertEqual(os.path.basename(ret1['copy_file_path']),
                          'file1.txt')
         self.assertEqual(os.stat(os.path.join("data", "file1.txt")).st_size,
-                    os.stat(ret1['copy_file_path']).st_size)
+                         os.stat(ret1['copy_file_path']).st_size)
 
     def test_download_google_drive_link_compress_file(self):
         # google drive link of 'file1.txt.gzip'
@@ -1597,7 +1593,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertEqual(os.path.basename(ret1['copy_file_path']),
                          'file1.txt')
         self.assertEqual(os.stat(os.path.join("data", "file1.txt")).st_size,
-                    os.stat(ret1['copy_file_path']).st_size)
+                         os.stat(ret1['copy_file_path']).st_size)
 
     def test_download_google_drive_link_large_uncompress_file(self):
         file_url = 'https://drive.google.com/open?id=1WBni9AcU7AHWY72amXBg7Dxb0d2RUGch'
@@ -1626,10 +1622,10 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertIsNotNone(ret1['copy_file_path'])
         self.assertEqual(os.path.basename(ret1['copy_file_path']),
                          'zip1.zip')
-        self.assertTrue(set(['tar1', 'zip1.zip']) <= 
-                    set(os.listdir(os.path.dirname(ret1['copy_file_path']))))
+        self.assertTrue(set(['tar1', 'zip1.zip']) <=
+                        set(os.listdir(os.path.dirname(ret1['copy_file_path']))))
         self.assertEqual(os.stat(os.path.join("data", "zip1.zip")).st_size,
-                    os.stat(ret1['copy_file_path']).st_size)
+                         os.stat(ret1['copy_file_path']).st_size)
 
     def test_download_ftp_link_uncompress_file(self):
 
@@ -1654,7 +1650,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertEqual(os.path.basename(ret1['copy_file_path']),
                          'file1.txt')
         self.assertEqual(os.stat(os.path.join("data", fq_filename)).st_size,
-                                    os.stat(ret1['copy_file_path']).st_size)
+                         os.stat(ret1['copy_file_path']).st_size)
 
     def test_download_ftp_link_compress_file(self):
 
@@ -1679,7 +1675,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertEqual(os.path.basename(ret1['copy_file_path']),
                          'file1.txt')
         self.assertEqual(os.stat(os.path.join("data", "file1.txt")).st_size,
-                            os.stat(ret1['copy_file_path']).st_size)
+                         os.stat(ret1['copy_file_path']).st_size)
 
     def test_download_ftp_link_archive_file(self):
 
@@ -1703,14 +1699,14 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertIsNotNone(ret1['copy_file_path'])
         self.assertEqual(os.path.basename(ret1['copy_file_path']),
                          'zip1.zip')
-        self.assertTrue(set(['tar1', 'zip1.zip']) <= 
-                    set(os.listdir(os.path.dirname(ret1['copy_file_path']))))
+        self.assertTrue(set(['tar1', 'zip1.zip']) <=
+                        set(os.listdir(os.path.dirname(ret1['copy_file_path']))))
         self.assertEqual(os.stat(os.path.join("data", "zip1.zip")).st_size,
-                            os.stat(ret1['copy_file_path']).st_size)
+                         os.stat(ret1['copy_file_path']).st_size)
 
     def mock_retrieve_filepath(file_url):
-        print 'Mocking _retrieve_filepath'
-        print "Mocking connecting file_url: {}".format(file_url)
+        print('Mocking _retrieve_filepath')
+        print("Mocking connecting file_url: {}".format(file_url))
         copy_file_path = 'test_file_path'
         return copy_file_path
 
@@ -1722,8 +1718,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.write_file(os.path.join(tmp_dir, 'inzip1.txt'), 'zip1')
         self.write_file(os.path.join(tmp_dir, 'inzip2.txt'), 'zip2')
         self.write_file(os.path.join(innerdir, 'innerzip.txt'), 'zipinner')
-        self.write_file(os.path.join(second_innerdir, 'sec_innerzip.txt'), 
-                                                            'sec_zipinner')
+        self.write_file(os.path.join(second_innerdir, 'sec_innerzip.txt'), 'sec_zipinner')
         new_file_path = self.impl.pack_file(
             self.ctx, {'file_path': tmp_dir + '/target',
                        'pack': 'zip'})[0]['file_path']
@@ -1732,11 +1727,5 @@ class DataFileUtilTest(unittest.TestCase):
             '/kb/module/work/tmp/packzipsubdirtest/target.zip')
         with zipfile.ZipFile(new_file_path) as z:
             self.assertEqual(set(z.namelist()),
-                             set(['inzip1.txt', 'inzip2.txt', 
-                                'inner/innerzip.txt', 
-                                'inner/sec_inner/sec_innerzip.txt']))
-
-
-
-
-
+                             set(['inzip1.txt', 'inzip2.txt', 'inner/innerzip.txt',
+                                  'inner/sec_inner/sec_innerzip.txt']))
