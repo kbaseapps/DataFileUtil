@@ -79,7 +79,7 @@ archiving.
 
     # staging file prefix
     STAGING_GLOBAL_FILE_PREFIX = '/data/bulk/'
-    STAGING_USER_FILE_PREFIX = '/staging'
+    STAGING_USER_FILE_PREFIX = '/staging/'
 
     def log(self, message, prefix_newline=False):
         print(('\n' if prefix_newline else '') +
