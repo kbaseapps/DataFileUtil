@@ -234,9 +234,10 @@ class DataFileUtilTest(unittest.TestCase):
         with open(txt_file_path, "wb") as output:
             output.seek(size_3GB)
             output.write('0'.encode())
-
-        print('--- generating a 3GB zipfile ---\n'
-              '--- to speed up your local test, please comment out test_unpack_large_zip ---')
+            
+        print('--- generating a 3GB zipfile ---\n' +
+              '--- to speed up your local test, ' +
+              'please comment out test_unpack_large_zip ---')
 
         compress_size = 0
         count = 0
@@ -1215,19 +1216,20 @@ class DataFileUtilTest(unittest.TestCase):
         error_msg = "missing 'staging_file_subdir_path' parameter"
         self.fail_download_staging_file(invalid_input_params, error_msg)
 
-    @patch.object(DataFileUtil, "STAGING_FILE_PREFIX", new='/kb/module/work/tmp/')
+    @patch.object(DataFileUtil, "STAGING_USER_FILE_PREFIX", new='/kb/module/work/tmp/')
     def test_download_staging_file(self):
+        # testing STAGING_USER_FILE_PREFIX/sub_dir/file_name
         tmp_dir = self.cfg['scratch']
         test_file = "file1.txt"
-        unpack_dir = os.path.join(tmp_dir, self.ctx['user_id'],
-                                  'test_download_staging_file')
+
+        unpack_dir = os.path.join(tmp_dir, 'test_download_staging_file')
         test_file_path = os.path.join(unpack_dir, test_file)
         if not os.path.exists(unpack_dir):
             os.makedirs(unpack_dir)
         shutil.copy('data/'+test_file, test_file_path)
 
         params = {
-            'staging_file_subdir_path': 'test_download_staging_file/file1.txt'
+            'staging_file_subdir_path': 'test_download_staging_file/file1.txt',
         }
 
         ret1 = self.impl.download_staging_file(
@@ -1236,12 +1238,13 @@ class DataFileUtilTest(unittest.TestCase):
             )[0]
         self.assertRegex(ret1['copy_file_path'], tmp_dir + '/.*/' + 'file1.txt')
 
-    @patch.object(DataFileUtil, "STAGING_FILE_PREFIX", new='/kb/module/work/tmp/')
+    @patch.object(DataFileUtil, "STAGING_USER_FILE_PREFIX", new='/kb/module/work/tmp/')
     def test_download_staging_file_compressed_file(self):
+        # testing STAGING_USER_FILE_PREFIX/sub_dir/file_name
         tmp_dir = self.cfg['scratch']
         test_file = "file1.txt.gz"
-        unpack_dir = os.path.join(tmp_dir, self.ctx['user_id'],
-                                  'test_download_compressed_staging_file')
+
+        unpack_dir = os.path.join(tmp_dir, 'test_download_compressed_staging_file')
         test_file_path = os.path.join(unpack_dir, test_file)
         if not os.path.exists(unpack_dir):
             os.makedirs(unpack_dir)
@@ -1257,12 +1260,13 @@ class DataFileUtilTest(unittest.TestCase):
             )[0]
         self.assertRegex(ret1['copy_file_path'], tmp_dir + '/.*/' + 'file1.txt')
 
-    @patch.object(DataFileUtil, "STAGING_FILE_PREFIX", new='/kb/module/work/tmp/')
+    @patch.object(DataFileUtil, "STAGING_GLOBAL_FILE_PREFIX", new='/kb/module/work/tmp/')
     def test_download_staging_file_archive_file(self):
+        # testing STAGING_GLOBAL_FILE_PREFIX/user_id/sub_dir/file_name
         tmp_dir = self.cfg['scratch']
         test_file = "zip1.zip"
-        unpack_dir = os.path.join(tmp_dir, self.ctx['user_id'],
-                                  'test_download_archive_staging_file')
+
+        unpack_dir = os.path.join(tmp_dir, self.ctx['user_id'], 'test_download_archive_staging_file')
         test_file_path = os.path.join(unpack_dir, test_file)
         if not os.path.exists(unpack_dir):
             os.makedirs(unpack_dir)
@@ -1276,14 +1280,15 @@ class DataFileUtilTest(unittest.TestCase):
                 self.ctx,
                 params
             )[0]
-        self.assertRegex(ret1['copy_file_path'], tmp_dir + '/.*/' + 'zip1.zip')
+
+        self.assertRegexpMatches(ret1['copy_file_path'], tmp_dir + '/.*/' + 'zip1.zip')
         self.assertTrue(set(['tar1', 'zip1.zip']) <=
                         set(os.listdir(os.path.dirname(ret1['copy_file_path']))))
         self.assertEqual(os.stat(os.path.join("data", "zip1.zip")).st_size,
                          os.stat(ret1['copy_file_path']).st_size)
 
-    def fail_download_web_file(self, params, error,
-                                        exception=ValueError, startswith=False):
+
+    def fail_download_web_file(self, params, error, exception=ValueError, startswith=False):
         with self.assertRaises(exception) as context:
             self.impl.download_web_file(self.ctx, params)
         if startswith:
@@ -1359,8 +1364,8 @@ class DataFileUtilTest(unittest.TestCase):
                         'download_type': 'FTP',
                         'file_url': 'ftp://FAKE_SERVER/Sample1.fastq'}
         error_msg = "Cannot connect:"
-        self.fail_download_web_file(invalid_input_params, error_msg,
-                                                            startswith=True)
+
+        self.fail_download_web_file(invalid_input_params, error_msg, startswith=True)
 
         fake_ftp_url = 'ftp://anonymous:FAKE_PASSWORD'
         fake_ftp_url += '@ftp.dlptest.com/24_Hour/Sample1.fastq'
@@ -1368,8 +1373,8 @@ class DataFileUtilTest(unittest.TestCase):
                         'download_type': 'FTP',
                         'file_url': fake_ftp_url}
         error_msg = "Cannot login:"
-        self.fail_download_web_file(invalid_input_params, error_msg,
-                                                            startswith=True)
+
+        self.fail_download_web_file(invalid_input_params, error_msg, startswith=True)
 
         invalid_input_params = {
                         'download_type': 'FTP',
@@ -1606,7 +1611,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertEqual(os.path.basename(ret1['copy_file_path']),
                          'file1.txt')
         self.assertEqual(os.stat(os.path.join("data", fq_filename)).st_size,
-                                    os.stat(ret1['copy_file_path']).st_size)
+                         os.stat(ret1['copy_file_path']).st_size)
 
     def test_download_ftp_link_compress_file(self):
 
@@ -1631,7 +1636,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertEqual(os.path.basename(ret1['copy_file_path']),
                          'file1.txt')
         self.assertEqual(os.stat(os.path.join("data", "file1.txt")).st_size,
-                            os.stat(ret1['copy_file_path']).st_size)
+                         os.stat(ret1['copy_file_path']).st_size)
 
     def test_download_ftp_link_archive_file(self):
 
@@ -1660,6 +1665,12 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertEqual(os.stat(os.path.join("data", "zip1.zip")).st_size,
                          os.stat(ret1['copy_file_path']).st_size)
 
+    def mock_retrieve_filepath(file_url):
+        print('Mocking _retrieve_filepath')
+        print("Mocking connecting file_url: {}".format(file_url))
+        copy_file_path = 'test_file_path'
+        return copy_file_path
+
     def test_pack_zip_with_subdirs(self):
         tmp_dir = os.path.join(self.cfg['scratch'], 'packzipsubdirtest')
         innerdir = os.path.join(tmp_dir, 'inner')
@@ -1668,8 +1679,8 @@ class DataFileUtilTest(unittest.TestCase):
         self.write_file(os.path.join(tmp_dir, 'inzip1.txt'), 'zip1')
         self.write_file(os.path.join(tmp_dir, 'inzip2.txt'), 'zip2')
         self.write_file(os.path.join(innerdir, 'innerzip.txt'), 'zipinner')
-        self.write_file(os.path.join(second_innerdir, 'sec_innerzip.txt'),
-                                                            'sec_zipinner')
+        self.write_file(os.path.join(second_innerdir, 'sec_innerzip.txt'), 'sec_zipinner')
+
         new_file_path = self.impl.pack_file(
             self.ctx, {'file_path': tmp_dir + '/target',
                        'pack': 'zip'})[0]['file_path']
