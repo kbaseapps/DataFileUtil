@@ -1,4 +1,4 @@
-FROM kbase/kbase:sdkbase2.latest
+FROM kbase/sdkbase2:python
 MAINTAINER KBase Developer
 # -----------------------------------------
 
@@ -15,10 +15,7 @@ RUN pip install semver \
     && sudo apt-get install nano
 # -----------------------------------------
 
-RUN sudo apt-get update \
-    && yes '' | sudo apt-get -y upgrade openssl
-
-RUN sudo apt-get install pigz
+RUN sudo apt-get install pigz wget
 RUN pip install bz2file
 
 COPY ./ /kb/module

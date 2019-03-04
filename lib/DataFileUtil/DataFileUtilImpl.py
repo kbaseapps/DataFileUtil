@@ -1,31 +1,32 @@
 # -*- coding: utf-8 -*-
 #BEGIN_HEADER
-import os
-import requests
-import json
-from biokbase.AbstractHandle.Client import AbstractHandle as HandleService  # @UnresolvedImport @IgnorePep8
-from biokbase.AbstractHandle.Client import ServerError as HandleError  # @UnresolvedImport @IgnorePep8
-from requests_toolbelt.multipart.encoder import MultipartEncoder
-import time
-import gzip
-import shutil
-from Workspace.WorkspaceClient import Workspace
-from Workspace.baseclient import ServerError as WorkspaceError
-import semver
-import magic
-import tempfile
-import bz2file  # @UnresolvedImport no idea why PyDev is complaining about this
-import tarfile
-import zipfile
-import errno
-import re
-import io
-import uuid
-import urllib2
-from contextlib import closing
-import ftplib
-import subprocess
 import copy
+import errno
+import ftplib
+import gzip
+import io
+import json
+import os
+import re
+import shutil
+import subprocess
+import tarfile
+import tempfile
+import time
+import uuid
+import zipfile
+
+import bz2file
+import magic
+import requests
+import semver
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+
+from installed_clients.AbstractHandleClient import AbstractHandle as HandleService
+from installed_clients.WorkspaceClient import Workspace
+from installed_clients.baseclient import ServerError as HandleError
+from installed_clients.baseclient import ServerError as WorkspaceError
+
 
 class ShockException(Exception):
     pass
@@ -55,9 +56,9 @@ archiving.
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.0.22"
-    GIT_URL = "https://github.com/Tianhao-Gu/DataFileUtil.git"
-    GIT_COMMIT_HASH = "c4733f9c81bcc8228c63ceeb2c0540df9e61153e"
+    VERSION = "0.0.25"
+    GIT_URL = "git@github.com:kbaseapps/DataFileUtil.git"
+    GIT_COMMIT_HASH = "d27d86dd24b50a88bc17f538b79302cfad3e1364"
 
     #BEGIN_CLASS_HEADER
 
@@ -244,7 +245,7 @@ archiving.
 
     def _unarchive(self, file_path, unpack, file_type):
         file_dir = os.path.dirname(file_path)
-        if file_type in ['application/' + x for x in 'x-tar', 'tar', 'x-gtar']:
+        if file_type in ['application/' + x for x in ('x-tar', 'tar', 'x-gtar')]:
             if not unpack:
                 raise ValueError(
                     'File {} is tar file but only uncompress was specified'
@@ -253,8 +254,7 @@ archiving.
             with tarfile.open(file_path) as tf:
                 self._check_members(tf.getnames())
                 tf.extractall(file_dir)
-        if file_type in ['application/' + x for x in
-                         'zip', 'x-zip-compressed']:  # , 'x-compressed']:
+        if file_type in ['application/' + x for x in ('zip', 'x-zip-compressed')]:
                         # x-compressed is apparently both .Z and .zip?
             if not unpack:
                 raise ValueError(
@@ -278,13 +278,13 @@ archiving.
 
     def _unpack(self, file_path, unpack):
         t = magic.from_file(file_path, mime=True)
-        if t in ['application/' + x for x in 'x-gzip', 'gzip']:
+        if t in ['application/' + x for x in ('x-gzip', 'gzip')]:
             return self._pigz_decompress(file_path, unpack)
             # return self._decompress(gzip.open, file_path, unpack)
         # probably most of these aren't needed, but hard to find a definite
         # source
         if t in ['application/' + x for x in
-                 'x-bzip', 'x-bzip2', 'bzip', 'bzip2']:
+                 ('x-bzip', 'x-bzip2', 'bzip', 'bzip2')]:
             return self._decompress(bz2file.BZ2File, file_path, unpack)
 
         self._unarchive(file_path, unpack, t)
@@ -433,8 +433,8 @@ archiving.
                 self._wget_dl(file_url, copy_file_path)
                 success = True
             except Exception as e:
-                print 'Exception Error: {}'.format(e)
-                print 'Failed to download. Attempting to rerun'
+                print('Exception Error: {}'.format(e))
+                print('Failed to download. Attempting to rerun')
                 attempts += 1
 
         if not success:
@@ -636,12 +636,12 @@ archiving.
 
         try:
             ftp = ftplib.FTP(domain)
-        except ftplib.all_errors, error:
+        except ftplib.all_errors as error:
             raise ValueError("Cannot connect: {}".format(error))
         else:
             try:
                 ftp.login(user_name, password)
-            except ftplib.all_errors, error:
+            except ftplib.all_errors as error:
                 raise ValueError("Cannot login: {}".format(error))
             else:
                 ftp.cwd(file_path)
@@ -1064,9 +1064,8 @@ archiving.
             info_file_path = os.path.join(dir_path, info_file_name)
             with io.open(info_file_path, 'w', encoding="utf-8") as writer:
                 text = json.dumps(info_to_save, sort_keys=True,
-                                  indent=4, ensure_ascii=False,
-                                  encoding='utf8')
-                writer.write(unicode(text))
+                                  indent=4, ensure_ascii=False)
+                writer.write(text)
         fts_input = {'file_path': file_path, 'ws_refs': ws_refs,
                      'pack': 'zip'}
         if params.get('attributes'):
@@ -1531,12 +1530,12 @@ archiving.
         #END versions
 
         # At some point might do deeper type checking...
-        if not isinstance(wsver, basestring):
+        if not isinstance(wsver, str):
             raise ValueError('Method versions return value ' +
-                             'wsver is not type basestring as required.')
-        if not isinstance(shockver, basestring):
+                             'wsver is not type str as required.')
+        if not isinstance(shockver, str):
             raise ValueError('Method versions return value ' +
-                             'shockver is not type basestring as required.')
+                             'shockver is not type str as required.')
         # return the results
         return [wsver, shockver]
 
@@ -1621,7 +1620,6 @@ archiving.
                              'results is not type dict as required.')
         # return the results
         return [results]
-
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': 'OK',
