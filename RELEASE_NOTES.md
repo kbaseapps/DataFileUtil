@@ -1,4 +1,4 @@
-#0.1.1
+#0.1.0
 
 - shock attributes are now ignored on upload. In a future release they will be removed altogether
   and specifying attributes for upload will be an error.
