@@ -15,6 +15,7 @@ RUN pip install semver \
     && sudo apt-get install nano
 # -----------------------------------------
 
+RUN sudo apt-get update
 RUN sudo apt-get install pigz wget
 RUN pip install bz2file
 
