@@ -391,6 +391,7 @@ archiving.
                 file_name = file_url.split('/')[-1]
             else:
                 file_name = content_disposition.split('filename="')[-1].split('";')[0]
+            response.close()
 
         self.log('Retrieving file name from url: {}'.format(file_name))
         copy_file_path = os.path.join(self.tmp, file_name)
@@ -517,6 +518,7 @@ archiving.
                 for chunk in response.iter_content(chunk_size=1024):
                     f.write(chunk)
 
+            response.close()
             self.log('Downloaded file to {}'.format(copy_file_path))
 
         return copy_file_path
@@ -560,6 +562,7 @@ archiving.
 
         copy_file_path = self._download_google_drive_to_file(force_download_link, response.cookies)
         copy_file_path = self._unpack(copy_file_path, True)
+        response.close()
 
         return copy_file_path
 
@@ -668,6 +671,7 @@ archiving.
         if r.status_code == 302:
             self.log('Using direct shock url for transferring files')
             self.shock_effective = r.headers['Location']
+        r.close()
         self.log('Shock url: ' + self.shock_effective)
         self.handle_url = config['handle-service-url']
         self.ws_url = config['workspace-url']
@@ -768,6 +772,7 @@ archiving.
                 if not chunk:
                     break
                 fhandle.write(chunk)
+            r.close()
         unpack = params.get('unpack')
         if unpack:
             if unpack not in ['unpack', 'uncompress']:
@@ -914,6 +919,7 @@ archiving.
             response, ('Error trying to upload file {} to Shock: '
                        ).format(file_path))
         shock_data = response.json()['data']
+        response.close()
         shock_id = shock_data['id']
         out = {'shock_id': shock_id,
                'handle': None,
@@ -935,8 +941,8 @@ archiving.
         """
         Using the same logic as unpacking a Shock file, this method will cause
         any bzip or gzip files to be uncompressed, and then unpack tar and zip
-        archive files (uncompressing gzipped or bzipped archive files if 
-        necessary). If the file is an archive, it will be unbundled into the 
+        archive files (uncompressing gzipped or bzipped archive files if
+        necessary). If the file is an archive, it will be unbundled into the
         directory containing the original output file.
         :param params: instance of type "UnpackFileParams" -> structure:
            parameter "file_path" of String
@@ -1186,6 +1192,7 @@ archiving.
             response, ('Error copying Shock node {}: '
                        ).format(source_id))
         shock_data = response.json()['data']
+        response.close()
         shock_id = shock_data['id']
         out = {'shock_id': shock_id, 'handle': None}
         if params.get('make_handle'):
@@ -1246,6 +1253,7 @@ archiving.
         self.check_shock_response(
             res, 'Error getting ACLs for Shock node {}: '.format(source_id))
         owner = res.json()['data']['owner']['username']
+        res.close()
         if owner != ctx['user_id']:
             out = self.copy_shock_node(ctx, params)[0]
         elif params.get('make_handle'):
@@ -1267,6 +1275,7 @@ archiving.
                 self.check_shock_response(r, errtxt)
                 out = {'shock_id': source_id,
                        'handle': self.make_handle(r.json()['data'], token)}
+                r.close()
         else:
             out = {'shock_id': source_id}
         #END own_shock_node
@@ -1509,6 +1518,7 @@ archiving.
         resp = requests.get(self.shock_url, allow_redirects=True)
         self.check_shock_response(resp, 'Error contacting Shock: ')
         shockver = resp.json()['version']
+        resp.close()
         #END versions
 
         # At some point might do deeper type checking...
