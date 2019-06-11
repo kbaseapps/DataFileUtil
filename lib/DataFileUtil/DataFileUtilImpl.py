@@ -898,13 +898,12 @@ archiving.
         pack = params.get('pack')
         if pack:
             file_path = self._pack(file_path, pack)
-        attribs = params.get('attributes')
         self.log('uploading file ' + str(file_path) + ' into shock node')
         with open(os.path.abspath(file_path), 'rb') as data_file:
-            files = {'upload': (os.path.basename(file_path), data_file)}
-            if attribs:
-                files['attributes'] = ('attributes',
-                                       json.dumps(attribs).encode('UTF-8'))
+            # Content-Length header is required for transition to
+            # https://github.com/kbase/blobstore
+            files = {'upload': (os.path.basename(file_path), data_file, None,
+                {'Content-Length': os.path.getsize(file_path)})}
             mpe = MultipartEncoder(fields=files)
             headers['content-type'] = mpe.content_type
             response = requests.post(
@@ -1068,8 +1067,6 @@ archiving.
                 writer.write(text)
         fts_input = {'file_path': file_path, 'ws_refs': ws_refs,
                      'pack': 'zip'}
-        if params.get('attributes'):
-            fts_input['attributes'] = params.get('attributes')
         returnVal = self.file_to_shock(ctx, fts_input)[0]
         #END package_for_download
 
@@ -1179,32 +1176,12 @@ archiving.
         mpdata = MultipartEncoder(fields={'copy_data': source_id})
         header['Content-Type'] = mpdata.content_type
         response = requests.post(
-            # copy_attributes only works in 0.9.13+
-            self.shock_url + '/node?copy_indexes=1&copy_attributes=1',
-            headers=header, data=mpdata, allow_redirects=True)
+            self.shock_url + '/node', headers=header, data=mpdata, allow_redirects=True)
         self.check_shock_response(
             response, ('Error copying Shock node {}: '
                        ).format(source_id))
         shock_data = response.json()['data']
         shock_id = shock_data['id']
-        # remove when min required version is 0.9.13
-        if semver.match(self.versions(ctx)[1], '<0.9.13'):
-            del header['Content-Type']
-            r = requests.get(self.shock_url + '/node/' + source_id,
-                             headers=header, allow_redirects=True)
-            errtxt = ('Error downloading attributes from shock ' +
-                      'node {}: ').format(shock_id)
-            self.check_shock_response(r, errtxt)
-            attribs = r.json()['data']['attributes']
-            if attribs:
-                files = {'attributes': ('attributes',
-                                        json.dumps(attribs).encode('UTF-8'))}
-                response = requests.put(
-                    self.shock_url + '/node/' + shock_id, headers=header,
-                    files=files, allow_redirects=True)
-                self.check_shock_response(
-                    response, ('Error setting attributes on Shock node {}: '
-                               ).format(shock_id))
         out = {'shock_id': shock_id, 'handle': None}
         if params.get('make_handle'):
             out['handle'] = self.make_handle(shock_data, token)
