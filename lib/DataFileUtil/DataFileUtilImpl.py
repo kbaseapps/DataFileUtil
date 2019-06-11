@@ -56,9 +56,9 @@ archiving.
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.0.25"
-    GIT_URL = "git@github.com:kbaseapps/DataFileUtil.git"
-    GIT_COMMIT_HASH = "d27d86dd24b50a88bc17f538b79302cfad3e1364"
+    VERSION = "0.1.1"
+    GIT_URL = "https://github.com/mrcreosote/DataFileUtil"
+    GIT_COMMIT_HASH = "f816c1d3ab84c9cee6a83b3d7200a44b4de112ef"
 
     #BEGIN_CLASS_HEADER
 
@@ -849,26 +849,27 @@ archiving.
         :param params: instance of type "FileToShockParams" (Input for the
            file_to_shock function. Required parameters: file_path - the
            location of the file (or directory if using the pack parameter) to
-           load to Shock. Optional parameters: attributes - user-specified
-           attributes to save to the Shock node along with the file.
-           make_handle - make a Handle Service handle for the shock node.
-           Default false. pack - compress a file or archive a directory
-           before loading to Shock. The file_path argument will be appended
-           with the appropriate file extension prior to writing. For gzips
-           only, if the file extension denotes that the file is already
-           compressed, it will be skipped. If file_path is a directory and
-           tarring or zipping is specified, the created file name will be set
-           to the directory name, possibly overwriting an existing file.
-           Attempting to pack the root directory is an error. Do not attempt
-           to pack the scratch space root as noted in the module description.
-           The allowed values are: gzip - gzip the file given by file_path.
-           targz - tar and gzip the directory specified by the directory
-           portion of the file_path into the file specified by the file_path.
-           zip - as targz but zip the directory.) -> structure: parameter
-           "file_path" of String, parameter "attributes" of mapping from
-           String to unspecified object, parameter "make_handle" of type
-           "boolean" (A boolean - 0 for false, 1 for true. @range (0, 1)),
-           parameter "pack" of String
+           load to Shock. Optional parameters: attributes - DEPRECATED:
+           attributes are currently ignored by the upload function and will
+           be removed entirely in a future version. User-specified attributes
+           to save to the Shock node along with the file. make_handle - make
+           a Handle Service handle for the shock node. Default false. pack -
+           compress a file or archive a directory before loading to Shock.
+           The file_path argument will be appended with the appropriate file
+           extension prior to writing. For gzips only, if the file extension
+           denotes that the file is already compressed, it will be skipped.
+           If file_path is a directory and tarring or zipping is specified,
+           the created file name will be set to the directory name, possibly
+           overwriting an existing file. Attempting to pack the root
+           directory is an error. Do not attempt to pack the scratch space
+           root as noted in the module description. The allowed values are:
+           gzip - gzip the file given by file_path. targz - tar and gzip the
+           directory specified by the directory portion of the file_path into
+           the file specified by the file_path. zip - as targz but zip the
+           directory.) -> structure: parameter "file_path" of String,
+           parameter "attributes" of mapping from String to unspecified
+           object, parameter "make_handle" of type "boolean" (A boolean - 0
+           for false, 1 for true. @range (0, 1)), parameter "pack" of String
         :returns: instance of type "FileToShockOutput" (Output of the
            file_to_shock function. shock_id - the ID of the new Shock node.
            handle - the new handle, if created. Null otherwise.
@@ -934,8 +935,8 @@ archiving.
         """
         Using the same logic as unpacking a Shock file, this method will cause
         any bzip or gzip files to be uncompressed, and then unpack tar and zip
-        archive files (uncompressing gzipped or bzipped archive files if
-        necessary). If the file is an archive, it will be unbundled into the
+        archive files (uncompressing gzipped or bzipped archive files if 
+        necessary). If the file is an archive, it will be unbundled into the 
         directory containing the original output file.
         :param params: instance of type "UnpackFileParams" -> structure:
            parameter "file_path" of String
@@ -1018,11 +1019,13 @@ archiving.
            produce info-files in JSON format containing workspace metadata
            and provenance structures. It produces new files in folder pointed
            by file_path (or folder containing file pointed by file_path if
-           it's not folder). Optional parameters: attributes - user-specified
-           attributes to save to the Shock node along with the file.) ->
-           structure: parameter "file_path" of String, parameter "attributes"
-           of mapping from String to unspecified object, parameter "ws_refs"
-           of list of String
+           it's not folder). Optional parameters: attributes - DEPRECATED:
+           attributes are currently ignored by the upload function and will
+           be removed entirely in a future version. User-specified attributes
+           to save to the Shock node along with the file.) -> structure:
+           parameter "file_path" of String, parameter "attributes" of mapping
+           from String to unspecified object, parameter "ws_refs" of list of
+           String
         :returns: instance of type "PackageForDownloadOutput" (Output of the
            package_for_download function. shock_id - the ID of the new Shock
            node. node_file_name - the name of the file stored in Shock. size
@@ -1084,7 +1087,9 @@ archiving.
            for the file_to_shock function. Required parameters: file_path -
            the location of the file (or directory if using the pack
            parameter) to load to Shock. Optional parameters: attributes -
-           user-specified attributes to save to the Shock node along with the
+           DEPRECATED: attributes are currently ignored by the upload
+           function and will be removed entirely in a future version.
+           User-specified attributes to save to the Shock node along with the
            file. make_handle - make a Handle Service handle for the shock
            node. Default false. pack - compress a file or archive a directory
            before loading to Shock. The file_path argument will be appended
