@@ -97,8 +97,9 @@ module DataFileUtil {
            pack parameter) to load to Shock.
        
        Optional parameters:
-       attributes - user-specified attributes to save to the Shock node along
-           with the file.
+       attributes - DEPRECATED: attributes are currently ignored by the upload function and
+           will be removed entirely in a future version. User-specified attributes to save to the
+           Shock node along with the file.
        make_handle - make a Handle Service handle for the shock node. Default
            false.
        pack - compress a file or archive a directory before loading to Shock.
@@ -221,8 +222,9 @@ module DataFileUtil {
            by file_path (or folder containing file pointed by file_path if 
            it's not folder).
        Optional parameters:
-       attributes - user-specified attributes to save to the Shock node along
-           with the file.
+       attributes - DEPRECATED: attributes are currently ignored by the upload function and
+           will be removed entirely in a future version. User-specified attributes to save to the
+           Shock node along with the file.
     */
     typedef structure {
         string file_path;

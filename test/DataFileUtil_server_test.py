@@ -121,7 +121,7 @@ class DataFileUtilTest(unittest.TestCase):
         attribs = ret2['attributes']
         self.assertEqual(file_name, input_file_name)
         self.assertEqual(ret2['file_path'], file_path2)
-        self.assertEqual(attribs, {'foo': [{'bar': 'baz'}]})
+        self.assertEqual(attribs, None) # attribs are no longer supported
         self.assertEqual(ret2['size'], 7)
         with open(file_path2, 'r') as fh2:
             output = fh2.read()
@@ -819,7 +819,7 @@ class DataFileUtilTest(unittest.TestCase):
         file_name = ret2['node_file_name']
         attribs = ret2['attributes']  # @UnusedVariable
         self.assertEqual(file_name, input_file_name)
-        self.assertEqual(attribs, {'foopy': [{'bar': 'baz'}]})
+        self.assertEqual(attribs, None) # attribs are no longer supported
         with open(file_path2, 'r') as fh2:
             output = fh2.read()
         self.assertEqual(output, input_)
@@ -881,7 +881,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.delete_shock_node(r1['shock_id'])
         self.assertEqual(r1['shock_id'], r2['shock_id'])
         self.assertEqual(handle, r2['handle'])
-        self.assertEqual(r3['attributes'], {'id': 23})
+        self.assertEqual(r3['attributes'], None) # attribs are no longer supported
 
     def test_own_node_owned_no_handle(self):
         fp = self.write_file('ownfile25.txt', 'ownfile25')
@@ -896,7 +896,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.delete_shock_node(r1['shock_id'])
         self.assertEqual(r1['shock_id'], r2['shock_id'])
         self.assertEqual(r2.get('handle'), None)
-        self.assertEqual(r3['attributes'], {'id': 25})
+        self.assertEqual(r3['attributes'], None) # attribs are no longer supported
 
     def test_own_node_owned_with_new_handle(self):
         fp = self.write_file('ownfile24.txt', 'ownfile24')
@@ -911,7 +911,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertEqual(r1['shock_id'], r2['shock_id'])
         self.check_handle(r2['handle'], r2['handle']['hid'], r1['shock_id'],
                           '98592d7841bf95c2e7ad49d894f77eb3', 'ownfile24.txt')
-        self.assertEqual(r3['attributes'], {'id': 24})
+        self.assertEqual(r3['attributes'], None) # attribs are no longer supported
 
     def test_own_node_copy_with_new_handle(self):
         fp = self.write_file('ownfile27.txt', 'ownfile27')
@@ -934,7 +934,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertNotEqual(r1['shock_id'], r2['shock_id'])
         self.check_handle(r2['handle'], r2['handle']['hid'], r2['shock_id'],
                           'a3a568735be55a9ac810cf433c9bb9ef', 'ownfile27.txt')
-        self.assertEqual(r3['attributes'], {'id': 27})
+        self.assertEqual(r3['attributes'], None) # attribs are no longer supported
 
     def test_own_err_node_not_found(self):
         self.fail_own(
