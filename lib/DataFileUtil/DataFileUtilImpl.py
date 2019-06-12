@@ -517,9 +517,8 @@ archiving.
             with open(copy_file_path, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=1024):
                     f.write(chunk)
-
-            response.close()
             self.log('Downloaded file to {}'.format(copy_file_path))
+            response.close()
 
         return copy_file_path
 
@@ -550,19 +549,18 @@ archiving.
 
         force_download_link = force_download_link_prefix + '&id={}'.format(file_id)
 
-        session = requests.Session()
-        response = session.get(force_download_link)
-        confirm_token = self._get_google_confirm_token(response)
+        with requests.Session() as session:
+            response = session.get(force_download_link)
+            confirm_token = self._get_google_confirm_token(response)
 
-        if confirm_token:
-            force_download_link = force_download_link_prefix + '&confirm={}&id={}'.format(confirm_token, file_id)
+            if confirm_token:
+                force_download_link = force_download_link_prefix + '&confirm={}&id={}'.format(confirm_token, file_id)
 
-        self.log('Generating Google Drive direct download link\n' +
-                 ' from: {}\n to: {}'.format(file_url, force_download_link))
+            self.log('Generating Google Drive direct download link\n' +
+                     ' from: {}\n to: {}'.format(file_url, force_download_link))
 
-        copy_file_path = self._download_google_drive_to_file(force_download_link, response.cookies)
-        copy_file_path = self._unpack(copy_file_path, True)
-        response.close()
+            copy_file_path = self._download_google_drive_to_file(force_download_link, response.cookies)
+            copy_file_path = self._unpack(copy_file_path, True)
 
         return copy_file_path
 
@@ -667,11 +665,10 @@ archiving.
         self.shock_url = config['shock-url']
         self.shock_effective = self.shock_url
         # note that the unit tests cannot easily test this. Be careful with changes here
-        r = requests.get(config['kbase-endpoint'] + '/shock-direct', allow_redirects=False)
-        if r.status_code == 302:
-            self.log('Using direct shock url for transferring files')
-            self.shock_effective = r.headers['Location']
-        r.close()
+        with requests.get(config['kbase-endpoint'] + '/shock-direct', allow_redirects=False) as r:
+            if r.status_code == 302:
+                self.log('Using direct shock url for transferring files')
+                self.shock_effective = r.headers['Location']
         self.log('Shock url: ' + self.shock_effective)
         self.handle_url = config['handle-service-url']
         self.ws_url = config['workspace-url']
@@ -765,14 +762,13 @@ archiving.
             file_path = os.path.join(file_path, node_file_name)
         self.log('downloading shock node ' + shock_id + ' into file: ' + str(file_path))
         with open(file_path, 'wb') as fhandle:
-            r = requests.get(node_url + '?download_raw', stream=True,
-                             headers=headers, allow_redirects=True)
-            self.check_shock_response(r, errtxt)
-            for chunk in r.iter_content(1024):
-                if not chunk:
-                    break
-                fhandle.write(chunk)
-            r.close()
+            with requests.get(node_url + '?download_raw', stream=True,
+                              headers=headers, allow_redirects=True) as r:
+                self.check_shock_response(r, errtxt)
+                for chunk in r.iter_content(1024):
+                    if not chunk:
+                        break
+                    fhandle.write(chunk)
         unpack = params.get('unpack')
         if unpack:
             if unpack not in ['unpack', 'uncompress']:
@@ -919,7 +915,6 @@ archiving.
             response, ('Error trying to upload file {} to Shock: '
                        ).format(file_path))
         shock_data = response.json()['data']
-        response.close()
         shock_id = shock_data['id']
         out = {'shock_id': shock_id,
                'handle': None,
@@ -1186,13 +1181,13 @@ archiving.
             raise ValueError('Must provide shock ID')
         mpdata = MultipartEncoder(fields={'copy_data': source_id})
         header['Content-Type'] = mpdata.content_type
-        response = requests.post(
-            self.shock_url + '/node', headers=header, data=mpdata, allow_redirects=True)
-        self.check_shock_response(
-            response, ('Error copying Shock node {}: '
-                       ).format(source_id))
-        shock_data = response.json()['data']
-        response.close()
+
+        with requests.post(self.shock_url + '/node', headers=header, data=mpdata,
+                           allow_redirects=True) as response:
+            self.check_shock_response(
+                response, ('Error copying Shock node {}: '
+                           ).format(source_id))
+            shock_data = response.json()['data']
         shock_id = shock_data['id']
         out = {'shock_id': shock_id, 'handle': None}
         if params.get('make_handle'):
@@ -1248,12 +1243,11 @@ archiving.
         source_id = params.get('shock_id')
         if not source_id:
             raise ValueError('Must provide shock ID')
-        res = requests.get(self.shock_url + '/node/' + source_id + '/acl/?verbosity=full',
-                           headers=header, allow_redirects=True)
-        self.check_shock_response(
-            res, 'Error getting ACLs for Shock node {}: '.format(source_id))
-        owner = res.json()['data']['owner']['username']
-        res.close()
+        with requests.get(self.shock_url + '/node/' + source_id + '/acl/?verbosity=full',
+                          headers=header, allow_redirects=True) as res:
+            self.check_shock_response(
+                res, 'Error getting ACLs for Shock node {}: '.format(source_id))
+            owner = res.json()['data']['owner']['username']
         if owner != ctx['user_id']:
             out = self.copy_shock_node(ctx, params)[0]
         elif params.get('make_handle'):
@@ -1268,14 +1262,13 @@ archiving.
             else:
                 # possibility of race condition here, but highly unlikely, so
                 # meh
-                r = requests.get(self.shock_url + '/node/' + source_id,
-                                 headers=header, allow_redirects=True)
-                errtxt = ('Error downloading attributes from shock ' +
-                          'node {}: ').format(source_id)
-                self.check_shock_response(r, errtxt)
-                out = {'shock_id': source_id,
-                       'handle': self.make_handle(r.json()['data'], token)}
-                r.close()
+                with requests.get(self.shock_url + '/node/' + source_id,
+                                  headers=header, allow_redirects=True) as r:
+                    errtxt = ('Error downloading attributes from shock ' +
+                              'node {}: ').format(source_id)
+                    self.check_shock_response(r, errtxt)
+                    out = {'shock_id': source_id,
+                           'handle': self.make_handle(r.json()['data'], token)}
         else:
             out = {'shock_id': source_id}
         #END own_shock_node
@@ -1515,10 +1508,9 @@ archiving.
         #BEGIN versions
         del ctx
         wsver = Workspace(self.ws_url).ver()
-        resp = requests.get(self.shock_url, allow_redirects=True)
-        self.check_shock_response(resp, 'Error contacting Shock: ')
-        shockver = resp.json()['version']
-        resp.close()
+        with requests.get(self.shock_url, allow_redirects=True) as resp:
+            self.check_shock_response(resp, 'Error contacting Shock: ')
+            shockver = resp.json()['version']
         #END versions
 
         # At some point might do deeper type checking...
