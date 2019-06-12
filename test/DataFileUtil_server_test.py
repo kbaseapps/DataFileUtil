@@ -234,7 +234,7 @@ class DataFileUtilTest(unittest.TestCase):
         with open(txt_file_path, "wb") as output:
             output.seek(size_3GB)
             output.write('0'.encode())
-            
+
         print('--- generating a 3GB zipfile ---\n' +
               '--- to speed up your local test, ' +
               'please comment out test_unpack_large_zip ---')
@@ -1318,7 +1318,7 @@ class DataFileUtilTest(unittest.TestCase):
         invalid_input_params = {
                         'download_type': 'Direct Download',
                         'file_url': 'invalid_URL'}
-        error_msg = "Cannot connect to URL: invalid_URL"
+        error_msg = "Invalid URL"
         self.fail_download_web_file(invalid_input_params, error_msg, startswith=True)
 
     def test_fail_download_web_file_google_drive(self):

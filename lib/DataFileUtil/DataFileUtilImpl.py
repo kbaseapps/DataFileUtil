@@ -377,13 +377,7 @@ archiving.
 
         """
 
-        try:
-            response = requests.get(file_url, cookies=cookies, stream=True)
-        except BaseException as error:
-            error_msg = 'Cannot connect to URL: {}\n'.format(file_url)
-            error_msg += 'Exception: {}'.format(error)
-            raise ValueError(error_msg)
-        else:
+        with requests.get(file_url, cookies=cookies, stream=True) as response:
             try:
                 content_disposition = response.headers['content-disposition']
             except KeyError:
@@ -391,7 +385,6 @@ archiving.
                 file_name = file_url.split('/')[-1]
             else:
                 file_name = content_disposition.split('filename="')[-1].split('";')[0]
-            response.close()
 
         self.log('Retrieving file name from url: {}'.format(file_name))
         copy_file_path = os.path.join(self.tmp, file_name)
@@ -479,7 +472,7 @@ archiving.
             force_download_link = file_url.partition('?')[0] + '?raw=1'
 
         self.log('Generating DropBox direct download link\n' +
-                    ' from: {}\n to: {}'.format(file_url, force_download_link))
+                 ' from: {}\n to: {}'.format(file_url, force_download_link))
 
         copy_file_path = self._download_to_file(force_download_link)
         copy_file_path = self._unpack(copy_file_path, True)
@@ -507,18 +500,11 @@ archiving.
         self.log('Connecting and downloading web source: {}'.format(
                                                                 file_url))
 
-        try:
-            response = requests.get(file_url, cookies=cookies, stream=True)
-        except BaseException as error:
-            error_msg = 'Cannot connect to URL: {}\n'.format(file_url)
-            error_msg += 'Exception: {}'.format(error)
-            raise ValueError(error_msg)
-        else:
+        with requests.get(file_url, cookies=cookies, stream=True) as response:
             with open(copy_file_path, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=1024):
                     f.write(chunk)
             self.log('Downloaded file to {}'.format(copy_file_path))
-            response.close()
 
         return copy_file_path
 
@@ -615,7 +601,7 @@ archiving.
 
         with open(copy_file_path, 'wb') as output:
             ftp_connection.retrbinary('RETR {}'.format(ftp_file_name),
-                                        output.write)
+                                      output.write)
         self.log('Copied FTP file to: {}'.format(copy_file_path))
 
         copy_file_path = self._unpack(copy_file_path, True)
