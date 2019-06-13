@@ -648,24 +648,6 @@ archiving.
         except ftplib.all_errors as error:
             raise ValueError("Cannot connect: {}".format(error))
 
-        # try:
-        #     ftp = ftplib.FTP(domain)
-        # except ftplib.all_errors as error:
-        #     raise ValueError("Cannot connect: {}".format(error))
-        # else:
-        #     try:
-        #         ftp.login(user_name, password)
-        #     except ftplib.all_errors as error:
-        #         raise ValueError("Cannot login: {}".format(error))
-        #     else:
-        #         ftp.cwd(file_path)
-        #         if file_name in ftp.nlst():
-        #             pass
-        #         else:
-        #             raise ValueError(
-        #               "File {} does NOT exist in FTP path: {}".format(
-        #                             file_name, domain + '/' + file_path))
-
     def _gen_tmp_path(self):
         return os.path.join(self.scratch, str(uuid.uuid4()))
 
