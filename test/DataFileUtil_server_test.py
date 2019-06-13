@@ -234,7 +234,7 @@ class DataFileUtilTest(unittest.TestCase):
         with open(txt_file_path, "wb") as output:
             output.seek(size_3GB)
             output.write('0'.encode())
-            
+
         print('--- generating a 3GB zipfile ---\n' +
               '--- to speed up your local test, ' +
               'please comment out test_unpack_large_zip ---')
