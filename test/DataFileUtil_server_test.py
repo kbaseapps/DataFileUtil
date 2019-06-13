@@ -1592,14 +1592,14 @@ class DataFileUtilTest(unittest.TestCase):
 
         fq_filename = "file1.txt"
 
-        ftp_connection = ftplib.FTP('ftp.uconn.edu')
-        ftp_connection.login('anonymous', 'anonymous@domain.com')
-        ftp_connection.cwd("/48_hour/")
+        with ftplib.FTP('ftp.uconn.edu') as ftp_connection:
+            ftp_connection.login('anonymous', 'anonymous@domain.com')
+            ftp_connection.cwd("/48_hour/")
 
-        if fq_filename not in ftp_connection.nlst():
-            fh = open(os.path.join("data", fq_filename), 'rb')
-            ftp_connection.storbinary('STOR file1.txt', fh)
-            fh.close()
+            if fq_filename not in ftp_connection.nlst():
+                fh = open(os.path.join("data", fq_filename), 'rb')
+                ftp_connection.storbinary('STOR file1.txt', fh)
+                fh.close()
 
         params = {
             'download_type': 'FTP',
@@ -1617,14 +1617,14 @@ class DataFileUtilTest(unittest.TestCase):
 
         fq_filename = "file1.txt.bz"
 
-        ftp_connection = ftplib.FTP('ftp.uconn.edu')
-        ftp_connection.login('anonymous', 'anonymous@domain.com')
-        ftp_connection.cwd("/48_hour/")
+        with ftplib.FTP('ftp.uconn.edu') as ftp_connection:
+            ftp_connection.login('anonymous', 'anonymous@domain.com')
+            ftp_connection.cwd("/48_hour/")
 
-        if fq_filename not in ftp_connection.nlst():
-            fh = open(os.path.join("data", fq_filename), 'rb')
-            ftp_connection.storbinary('STOR file1.txt.bz', fh)
-            fh.close()
+            if fq_filename not in ftp_connection.nlst():
+                fh = open(os.path.join("data", fq_filename), 'rb')
+                ftp_connection.storbinary('STOR file1.txt.bz', fh)
+                fh.close()
 
         params = {
             'download_type': 'FTP',
@@ -1642,14 +1642,14 @@ class DataFileUtilTest(unittest.TestCase):
 
         fq_filename = "zip1.zip"
 
-        ftp_connection = ftplib.FTP('ftp.uconn.edu')
-        ftp_connection.login('anonymous', 'anonymous@domain.com')
-        ftp_connection.cwd("/48_hour/")
+        with ftplib.FTP('ftp.uconn.edu') as ftp_connection:
+            ftp_connection.login('anonymous', 'anonymous@domain.com')
+            ftp_connection.cwd("/48_hour/")
 
-        if fq_filename not in ftp_connection.nlst():
-            fh = open(os.path.join("data", fq_filename), 'rb')
-            ftp_connection.storbinary('STOR zip1.zip', fh)
-            fh.close()
+            if fq_filename not in ftp_connection.nlst():
+                fh = open(os.path.join("data", fq_filename), 'rb')
+                ftp_connection.storbinary('STOR zip1.zip', fh)
+                fh.close()
 
         params = {
             'download_type': 'FTP',

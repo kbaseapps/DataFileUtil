@@ -603,16 +603,16 @@ archiving.
         self._check_ftp_connection(ftp_user_name, ftp_password,
                                    ftp_domain, ftp_file_path, ftp_file_name)
 
-        ftp_connection = ftplib.FTP(ftp_domain)
-        ftp_connection.login(ftp_user_name, ftp_password)
-        ftp_connection.cwd(ftp_file_path)
+        with ftplib.FTP(ftp_domain) as ftp_connection:
+            ftp_connection.login(ftp_user_name, ftp_password)
+            ftp_connection.cwd(ftp_file_path)
 
-        copy_file_path = os.path.join(self.tmp, ftp_file_name)
+            copy_file_path = os.path.join(self.tmp, ftp_file_name)
 
-        with open(copy_file_path, 'wb') as output:
-            ftp_connection.retrbinary('RETR {}'.format(ftp_file_name),
-                                      output.write)
-        self.log('Copied FTP file to: {}'.format(copy_file_path))
+            with open(copy_file_path, 'wb') as output:
+                ftp_connection.retrbinary('RETR {}'.format(ftp_file_name),
+                                          output.write)
+            self.log('Copied FTP file to: {}'.format(copy_file_path))
 
         copy_file_path = self._unpack(copy_file_path, True)
 
@@ -632,22 +632,39 @@ archiving.
         """
 
         try:
-            ftp = ftplib.FTP(domain)
+            with ftplib.FTP(domain) as ftp:
+                try:
+                    ftp.login(user_name, password)
+                except ftplib.all_errors as error:
+                    raise ValueError("Cannot login: {}".format(error))
+                else:
+                    ftp.cwd(file_path)
+                    if file_name in ftp.nlst():
+                        pass
+                    else:
+                        raise ValueError(
+                          "File {} does NOT exist in FTP path: {}".format(
+                                    file_name, domain + '/' + file_path))
         except ftplib.all_errors as error:
             raise ValueError("Cannot connect: {}".format(error))
-        else:
-            try:
-                ftp.login(user_name, password)
-            except ftplib.all_errors as error:
-                raise ValueError("Cannot login: {}".format(error))
-            else:
-                ftp.cwd(file_path)
-                if file_name in ftp.nlst():
-                    pass
-                else:
-                    raise ValueError(
-                      "File {} does NOT exist in FTP path: {}".format(
-                                    file_name, domain + '/' + file_path))
+
+        # try:
+        #     ftp = ftplib.FTP(domain)
+        # except ftplib.all_errors as error:
+        #     raise ValueError("Cannot connect: {}".format(error))
+        # else:
+        #     try:
+        #         ftp.login(user_name, password)
+        #     except ftplib.all_errors as error:
+        #         raise ValueError("Cannot login: {}".format(error))
+        #     else:
+        #         ftp.cwd(file_path)
+        #         if file_name in ftp.nlst():
+        #             pass
+        #         else:
+        #             raise ValueError(
+        #               "File {} does NOT exist in FTP path: {}".format(
+        #                             file_name, domain + '/' + file_path))
 
     def _gen_tmp_path(self):
         return os.path.join(self.scratch, str(uuid.uuid4()))
