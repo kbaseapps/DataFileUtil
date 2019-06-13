@@ -377,14 +377,19 @@ archiving.
 
         """
 
-        with requests.get(file_url, cookies=cookies, stream=True) as response:
-            try:
-                content_disposition = response.headers['content-disposition']
-            except KeyError:
-                self.log('Parsing file name directly from URL')
-                file_name = file_url.split('/')[-1]
-            else:
-                file_name = content_disposition.split('filename="')[-1].split('";')[0]
+        try:
+            with requests.get(file_url, cookies=cookies, stream=True) as response:
+                try:
+                    content_disposition = response.headers['content-disposition']
+                except KeyError:
+                    self.log('Parsing file name directly from URL')
+                    file_name = file_url.split('/')[-1]
+                else:
+                    file_name = content_disposition.split('filename="')[-1].split('";')[0]
+        except BaseException as error:
+            error_msg = 'Cannot connect to URL: {}\n'.format(file_url)
+            error_msg += 'Exception: {}'.format(error)
+            raise ValueError(error_msg)
 
         self.log('Retrieving file name from url: {}'.format(file_name))
         copy_file_path = os.path.join(self.tmp, file_name)
@@ -500,11 +505,16 @@ archiving.
         self.log('Connecting and downloading web source: {}'.format(
                                                                 file_url))
 
-        with requests.get(file_url, cookies=cookies, stream=True) as response:
-            with open(copy_file_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=1024):
-                    f.write(chunk)
-            self.log('Downloaded file to {}'.format(copy_file_path))
+        try:
+            with requests.get(file_url, cookies=cookies, stream=True) as response:
+                with open(copy_file_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=1024):
+                        f.write(chunk)
+                self.log('Downloaded file to {}'.format(copy_file_path))
+        except BaseException as error:
+            error_msg = 'Cannot connect to URL: {}\n'.format(file_url)
+            error_msg += 'Exception: {}'.format(error)
+            raise ValueError(error_msg)
 
         return copy_file_path
 
