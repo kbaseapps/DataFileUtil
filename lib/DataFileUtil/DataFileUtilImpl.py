@@ -56,7 +56,7 @@ archiving.
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.1.1"
+    VERSION = "0.1.2"
     GIT_URL = "https://github.com/mrcreosote/DataFileUtil"
     GIT_COMMIT_HASH = "f816c1d3ab84c9cee6a83b3d7200a44b4de112ef"
 
