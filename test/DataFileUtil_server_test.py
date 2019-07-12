@@ -869,9 +869,9 @@ class DataFileUtilTest(unittest.TestCase):
         # note this is missing fields that the created handles will have
         handle = {'id': str(r1['shock_id']),
                   'type': 'shock',
-                  'url': str(self.shockURL),
-                  'file_name': 'ownfile23.txt'}
+                  'url': str(self.shockURL)}
         handle['hid'] = str(self.hs.persist_handle(handle))
+        handle['file_name'] = None
         handle['remote_md5'] = None
         r2 = self.impl.own_shock_node(
             self.ctx, {'shock_id': r1['shock_id'], 'make_handle': 1})[0]
