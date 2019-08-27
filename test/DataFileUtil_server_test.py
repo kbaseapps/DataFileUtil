@@ -284,7 +284,7 @@ class DataFileUtilTest(unittest.TestCase):
         rethandle = ret1['handle']
         hid = rethandle['hid']
         handle = self.hs.hids_to_handles([hid])[0]
-        self.hs.delete_handles([hid])
+        self.hs.delete_handles([handle])
         self.check_handle(rethandle, hid, shock_id,
                           '88d0594a4ee2b25527540fe76233a405', 'input.txt')
         self.check_handle(handle, hid, shock_id,
@@ -844,7 +844,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.delete_shock_node(new_id)
         hid = retcopy['handle']['hid']
         handle = self.hs.hids_to_handles([hid])[0]
-        self.hs.delete_handles([hid])
+        self.hs.delete_handles([handle])
         self.check_handle(retcopy['handle'], hid, new_id,
                           '748ff3bbb8d31783c852513422eedb87', 'input.txt')
         self.check_handle(handle, hid, new_id,
@@ -1157,7 +1157,8 @@ class DataFileUtilTest(unittest.TestCase):
             {'object_refs': [str(ws) + '/bad_handle'],
              'ignore_errors': 1})[0]['data']
         self.assertIsNone(gret[0])
-        self.hs.delete_handles([handle_id])
+        handle = self.hs.hids_to_handles([handle_id])[0]
+        self.hs.delete_handles([handle])
 
     def test_get_objects_ignore_errors(self):
         objs = [{'name': 'whoop',
