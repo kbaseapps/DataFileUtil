@@ -1057,7 +1057,7 @@ archiving.
             ws_name = item_info[7]
             obj_name = item_info[1]
             obj_ver = item_info[4]
-            info_file_name = 'KBase_object_details_' + ws_name + '_' + \
+            info_file_name = 'KBase_object_details_' + ws_name.replace(':', '_') + '_' + \
                              obj_name + '_v' + str(obj_ver) + '.json'
             info_file_path = os.path.join(dir_path, info_file_name)
             with io.open(info_file_path, 'w', encoding="utf-8") as writer:
