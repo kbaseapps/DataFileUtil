@@ -1,31 +1,36 @@
+before_install:
+  - base_dir=`pwd` && cd ../ && mv $base_dir project/ && cd project && base_dir=`pwd`
+  - >-
+    git clone https://github.com/bio-boris/mini_kb.git && cd mini_kb && git
+    checkout test_sdk_apps
+# Set up permissions and directory
+  - chmod +x ./run_tests/* && ./run_tests/setup_travis.sh
+  - time docker-compose up -d ci-mongo
+    # Add user token
+  - >-
+    mongo=`docker ps | grep ci-mongo | cut -f1 -d' '`; docker cp
+    ./run_tests/inject_token.sh $mongo:/
+  - docker exec -it $mongo bash -c /inject_token.sh
+# Get a kb-sdk with new docker version for host networking
+  - docker pull kbase/kb-sdk:docker17
+# Copy over a modified kb-sdk
+  - cd $base_dir
+  - cp mini_kb/run_tests/kb-sdk ~/bin/ && chmod +x ~/bin/kb-sdk
+  - cat ~/bin/kb-sdk
+# Set up initial files for testing
+  - ~/bin/kb-sdk validate
+  - ~/bin/kb-sdk test || true
+# Copy over a modified test file with correct token and correct minikb endpoints
+  - cp mini_kb/run_tests/test.cfg test_local/test.cfg
+    # Make sure host networking is enabled for all subjobs
+  - sed -i 's/run -v/run -v --network=host/g' test_local/*.sh
+  - sed -i 's/run --rm -v/run --rm -v --network=host/g' test_local/*.sh
+
+
 language: python
-
-sudo: required
-
+script:
+  - ~/bin/kb-sdk validate
+  - ~/bin/kb-sdk test
 services:
   - docker
-
-branches:
-  only:
-    - master
-
-env:
-
-before_install:
-  - docker version
-
-install:
-  - pushd ..
-  - git clone https://github.com/kbase/jars
-  - git clone https://github.com/kbase/kb_sdk
-  - cd kb_sdk
-  - make bin
-  - make sdkbase
-  - export PATH=$(pwd)/bin:$PATH
-  - source src/sh/sdk-completion.sh
-  - popd
-
-script:
-  - kb-sdk validate
-
-after_script:
+sudo: required
