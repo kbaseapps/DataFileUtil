@@ -1,10 +1,15 @@
-[![Build Status](https://travis-ci.org/rsutormin/DataFileUtil.svg?branch=master)](https://travis-ci.org/rsutormin/DataFileUtil)
-
 # DataFileUtil
 ---
 
-## Utility functions for operating on files and data objects in KBase data stores like Shock and the Workspace
+Utility functions for operating on files and data objects in KBase data stores like Shock and the Workspace
 
+## Current Status
+
+| Branch  | Build                                                              | Coverage                                                                         | LGTM Alerts                                                     |
+| ------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| master  | [![Build Status](https://travis-ci.org/kbaseapps/DataFileUtil.svg?branch=master)](https://travis-ci.org/kbaseapps/DataFileUtil)  | [![Coverage Status](https://coveralls.io/repos/github/kbaseapps/DataFileUtil/badge.svg?branch=master)](https://coveralls.io/github/kbaseapps/DataFileUtil?branch=master)  | [![Total alerts](https://img.shields.io/lgtm/alerts/g/kbaseapps/DataFileUtil.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/kbaseapps/DataFileUtil/alerts/)  |
+| develop  | [![Build Status](https://travis-ci.org/kbaseapps/DataFileUtil.svg?branch=develop)](https://travis-ci.org/kbaseapps/DataFileUtil)  | [![Coverage Status](https://coveralls.io/repos/github/kbaseapps/DataFileUtil/badge.svg?branch=develop)](https://coveralls.io/github/kbaseapps/DataFileUtil?branch=develop)  |  |
+---
 
 DataFileUtil is the lowest level wrapper around the KBase data stores, including the workspace, shock, and handle services. It thus handles operations on files, including file transfer and compression, as well as operations on KBase data objects.
 
