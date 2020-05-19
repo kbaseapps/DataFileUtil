@@ -17,6 +17,8 @@ Assuming DataFileUtil is being called in the context of a set of local SDK modul
 
 For any given type of data, the developer should use the appropriate existing SDK module for that data type regardless of whether the data is an object or a file. This appropriate data type module should also contain the logic for deciding how the data is stored, including which KIDL type specification is used as well as which data store.
 
+
+
 Some examples of methods available in DataFileUtil:
 - Download from external URL
 - File un/compression (gzip, tar, zip)
