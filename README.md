@@ -1,5 +1,5 @@
 # DataFileUtil
-Utility functions for operating on files and data objects in KBase data stores like Shock and the Workspace
+Utility functions for operating on files and data objects in KBase data stores like Shock and the Workspace.
 
 ## Current Status
 
