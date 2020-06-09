@@ -57,8 +57,8 @@ archiving.
     # the latter method is running.
     ######################################### noqa
     VERSION = "0.1.2"
-    GIT_URL = "https://github.com/mrcreosote/DataFileUtil"
-    GIT_COMMIT_HASH = "f816c1d3ab84c9cee6a83b3d7200a44b4de112ef"
+    GIT_URL = "git@github.com:kbaseapps/DataFileUtil.git"
+    GIT_COMMIT_HASH = "d8091ef8acdee21c5b43d1b84d3983b04be3729e"
 
     #BEGIN_CLASS_HEADER
 
@@ -931,8 +931,8 @@ archiving.
         """
         Using the same logic as unpacking a Shock file, this method will cause
         any bzip or gzip files to be uncompressed, and then unpack tar and zip
-        archive files (uncompressing gzipped or bzipped archive files if
-        necessary). If the file is an archive, it will be unbundled into the
+        archive files (uncompressing gzipped or bzipped archive files if 
+        necessary). If the file is an archive, it will be unbundled into the 
         directory containing the original output file.
         :param params: instance of type "UnpackFileParams" -> structure:
            parameter "file_path" of String
