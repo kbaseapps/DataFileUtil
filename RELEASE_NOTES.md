@@ -2,7 +2,7 @@
 - unrecorded changes
 
 #0.1.2
-- unrecorded changes
+- deprecate handle service with handle service 2
 
 #0.1.1
 - close no longer used sockets.
