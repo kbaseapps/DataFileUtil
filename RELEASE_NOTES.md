@@ -1,3 +1,8 @@
+#0.1.2
+- Added Actions workflow for KB SDK tests
+- Added Dependabot and LGTM configurations
+- Updated `README.md` to include standard build, coverage, and LGTM badging.
+
 #0.1.1
 - close no longer used sockets.
 - replace the colon(:) [that was reported to have caused download error for Windows users] with underscore in shock filenames
