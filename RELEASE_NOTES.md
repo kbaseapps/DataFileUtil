@@ -1,7 +1,13 @@
-#0.1.2
+
+#0.1.3
+- tidying for github consistency
 - Added Actions workflow for KB SDK tests
 - Added Dependabot and LGTM configurations
 - Updated `README.md` to include standard build, coverage, and LGTM badging.
+
+#0.1.2
+- deprecate handle service with handle service 2
+
 
 #0.1.1
 - close no longer used sockets.
