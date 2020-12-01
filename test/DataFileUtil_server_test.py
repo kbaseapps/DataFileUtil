@@ -2,6 +2,7 @@ import filecmp
 import ftplib
 import gzip
 import os.path
+import errno
 import shutil
 import tarfile
 import tempfile
@@ -730,7 +731,12 @@ class DataFileUtilTest(unittest.TestCase):
                                        {'file_path': 'data/file1.txt'})[0]
         sid = ret1['shock_id']
         d = 'foobarbazbingbang'
-        os.mkdir(d)
+        try:
+            os.mkdir(d)
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise
+            pass
         ret2 = self.impl.shock_to_file(self.ctx, {'shock_id': sid,
                                                   'file_path': d + '/foo',
                                                   }
