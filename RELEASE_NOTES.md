@@ -1,5 +1,6 @@
 #0.1.1
 - close no longer used sockets.
+- replace the colon(:) [that was reported to have caused download error for Windows users] with underscore in shock filenames
 
 #0.1.0
 
