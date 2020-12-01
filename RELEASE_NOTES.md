@@ -1,8 +1,9 @@
 #0.1.3
-- unrecorded changes
+- tidying for github consistency
 
 #0.1.2
 - deprecate handle service with handle service 2
+- replaced the colon(:) in filenames for files to shock with underscore(_)
 
 #0.1.1
 - close no longer used sockets.
