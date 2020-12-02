@@ -12,6 +12,7 @@ RUN pip install semver \
     && pip install python-magic \
     && pip install ftputil \
     && pip install ipython==5.3.0 \
+    && pip install pyftpdlib==1.5.6 \
     && sudo apt-get install nano
 # -----------------------------------------
 
