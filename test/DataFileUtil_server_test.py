@@ -71,15 +71,14 @@ class DataFileUtilTest(unittest.TestCase):
 
         cls.ftp_domain = 'localhost'
         cls.ftp_port = 21
-        cls.ftp_dir = cls.cfg['scratch']
         thread = threading.Thread(target=cls.start_ftp_service,
-                                  args=(cls.ftp_domain, cls.ftp_port, cls.ftp_dir))
+                                  args=(cls.ftp_domain, cls.ftp_port))
         thread.daemon = True
         thread.start()
         time.sleep(5)
 
     @classmethod
-    def start_ftp_service(cls, domain, port, default_dir):
+    def start_ftp_service(cls, domain, port):
 
         print('starting ftp service')
         authorizer = DummyAuthorizer()
