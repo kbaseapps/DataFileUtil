@@ -376,10 +376,9 @@ archiving.
         _retrieve_filepath: retrieve file name from download URL and return local file path
 
         """
-        self.log('Retrieving file name from url: {}'.format(file_name))
+        file_name = None
         try:
             response = requests.head(file_url, cookies=cookies)
-            file_name = None
             if 'content-disposition' in response.headers:
                 content_disposition = response.headers['content-disposition']
                 file_name = content_disposition.split('filename="')[-1].split('";')[0].strip()
@@ -391,7 +390,7 @@ archiving.
             error_msg = 'Cannot connect to URL: {}\n'.format(file_url)
             error_msg += 'Exception: {}'.format(error)
             raise ValueError(error_msg)   # XXX why is this a ValueError?
-
+        self.log('Retrieved file name from url: {}'.format(file_name))
         # Shorten any overly long filenames to avoid OSErrors
         # Our practical limit is 255 for eCryptfs
         if len(file_name) > 255:
