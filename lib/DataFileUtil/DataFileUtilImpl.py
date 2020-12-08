@@ -394,7 +394,9 @@ archiving.
 
         # Shorten any overly long filenames to avoid OSErrors
         # Our practical limit is 255 for eCryptfs
-        file_name = file_name[0:255]
+        if len(file_name) > 255:
+            (basename, ext) = os.path.splitext(file_name)
+            file_name = basename[0:255-len(ext)] + ext
         copy_file_path = os.path.join(self.tmp, file_name)
         return copy_file_path
 
