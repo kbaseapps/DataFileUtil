@@ -13,13 +13,13 @@ import subprocess
 import tarfile
 import tempfile
 import time
+from urllib.parse import urlparse
 import uuid
 import zipfile
 
 import bz2file
 import magic
 import requests
-import semver
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 from installed_clients.AbstractHandleClient import AbstractHandle as HandleService
@@ -376,24 +376,26 @@ archiving.
         _retrieve_filepath: retrieve file name from download URL and return local file path
 
         """
-
+        self.log('Retrieving file name from url: {}'.format(file_name))
         try:
-            with requests.get(file_url, cookies=cookies, stream=True) as response:
-                try:
-                    content_disposition = response.headers['content-disposition']
-                except KeyError:
-                    self.log('Parsing file name directly from URL')
-                    file_name = file_url.split('/')[-1]
-                else:
-                    file_name = content_disposition.split('filename="')[-1].split('";')[0]
-        except BaseException as error:
+            response = requests.head(file_url, cookies=cookies)
+            file_name = None
+            if 'content-disposition' in response.headers:
+                content_disposition = response.headers['content-disposition']
+                file_name = content_disposition.split('filename="')[-1].split('";')[0].strip()
+            if not file_name:  # None or empty
+                self.log('Parsing file name directly from URL')
+                url = urlparse(file_url)
+                file_name = os.path.basename(url.path)
+        except Exception as error:
             error_msg = 'Cannot connect to URL: {}\n'.format(file_url)
             error_msg += 'Exception: {}'.format(error)
-            raise ValueError(error_msg)
+            raise ValueError(error_msg)   # XXX why is this a ValueError?
 
-        self.log('Retrieving file name from url: {}'.format(file_name))
+        # Shorten any overly long filenames to avoid OSErrors
+        # Our practical limit is 255 for eCryptfs
+        file_name = file_name[0:255]
         copy_file_path = os.path.join(self.tmp, file_name)
-
         return copy_file_path
 
     def _wget_dl(self, url, destination_file, try_number=20, time_out=1800):
