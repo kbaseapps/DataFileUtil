@@ -800,20 +800,7 @@ class DataFileUtilTest(unittest.TestCase):
             'Error downloading file from shock node ' +
             '79261fd9-ae10-4a84-853d-1b8fcd57c8f23: Node not found',
             exception=ShockException)
-
-    def test_download_err_node_has_no_file(self):
-        # test attempting download on a node without a file.
-        res = requests.post(
-            self.shockURL + '/node/',
-            headers={'Authorization': 'OAuth ' + self.token}).json()
-        self.fail_download(
-            {'shock_id': res['data']['id'],
-             'file_path': 'foo'
-             },
-            'Node {} has no file'.format(res['data']['id']),
-            exception=ShockException)
-        self.delete_shock_node(res['data']['id'])
-
+    
     def test_download_err_no_node_provided(self):
         self.fail_download(
             {'shock_id': '',
@@ -888,7 +875,7 @@ class DataFileUtilTest(unittest.TestCase):
             {'shock_id': '79261fd9-ae10-4a84-853d-1b8fcd57c8f23'},
             'Error copying Shock node ' +
             '79261fd9-ae10-4a84-853d-1b8fcd57c8f23: ' +
-            'err@node_CreateNodeUpload: not found',
+            'Invalid copy_data: invalid UUID length: 37',
             exception=ShockException)
 
     def test_copy_err_no_node_provided(self):
