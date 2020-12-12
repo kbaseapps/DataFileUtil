@@ -2,6 +2,7 @@ import filecmp
 import ftplib
 import gzip
 import os.path
+import errno
 import shutil
 import tarfile
 import tempfile
@@ -14,6 +15,11 @@ from unittest.mock import patch
 
 import requests
 import semver
+
+from pyftpdlib.authorizers import DummyAuthorizer
+from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.servers import ThreadedFTPServer
+import threading
 
 from DataFileUtil.DataFileUtilImpl import DataFileUtil, ShockException, HandleError, WorkspaceError
 from DataFileUtil.DataFileUtilServer import MethodContext
@@ -63,6 +69,28 @@ class DataFileUtilTest(unittest.TestCase):
         suffix = int(time.time() * 1000)
         wsName = "test_DataFileUtil_" + str(suffix)
         cls.ws_info = cls.ws.create_workspace({'workspace': wsName})
+
+        cls.ftp_domain = 'localhost'
+        cls.ftp_port = 21
+        thread = threading.Thread(target=cls.start_ftp_service,
+                                  args=(cls.ftp_domain, cls.ftp_port))
+        thread.daemon = True
+        thread.start()
+        time.sleep(5)
+
+    @classmethod
+    def start_ftp_service(cls, domain, port):
+
+        print('starting ftp service')
+        authorizer = DummyAuthorizer()
+        authorizer.add_anonymous(os.getcwd(), perm='elradfmwMT')
+
+        handler = FTPHandler
+        handler.authorizer = authorizer
+
+        address = (domain, port)
+        with ThreadedFTPServer(address, handler) as server:
+            server.serve_forever()
 
     @classmethod
     def tearDownClass(cls):
@@ -225,7 +253,7 @@ class DataFileUtilTest(unittest.TestCase):
         zip_filename = 'large_file.txt.zip'
         tmp_dir = os.path.join(self.cfg['scratch'], 'unpacklargeziptest')
         if not os.path.exists(tmp_dir):
-                os.makedirs(tmp_dir)
+            os.makedirs(tmp_dir)
         zip_file_path = os.path.join(tmp_dir, zip_filename)
         txt_file_path = os.path.join(tmp_dir, txt_filename)
 
@@ -547,7 +575,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.fail_download({'shock_id': sid,
                             'file_path': td,
                             'unpack': unpack},
-                            error)
+                           error)
         self.delete_shock_node(sid)
 
     def test_uncompress_on_archive(self):
@@ -660,7 +688,7 @@ class DataFileUtilTest(unittest.TestCase):
         filename = 'large_file.txt'
         tmp_dir = os.path.join(self.cfg['scratch'], 'packlargeziptest')
         if not os.path.exists(tmp_dir):
-                os.makedirs(tmp_dir)
+            os.makedirs(tmp_dir)
         file_path = os.path.join(tmp_dir, filename)
 
         size_3GB = 3 * 1024 * 1024 * 1024
@@ -730,7 +758,12 @@ class DataFileUtilTest(unittest.TestCase):
                                        {'file_path': 'data/file1.txt'})[0]
         sid = ret1['shock_id']
         d = 'foobarbazbingbang'
-        os.mkdir(d)
+        try:
+            os.mkdir(d)
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise
+            pass
         ret2 = self.impl.shock_to_file(self.ctx, {'shock_id': sid,
                                                   'file_path': d + '/foo',
                                                   }
@@ -767,20 +800,7 @@ class DataFileUtilTest(unittest.TestCase):
             'Error downloading file from shock node ' +
             '79261fd9-ae10-4a84-853d-1b8fcd57c8f23: Node not found',
             exception=ShockException)
-
-    def test_download_err_node_has_no_file(self):
-        # test attempting download on a node without a file.
-        res = requests.post(
-            self.shockURL + '/node/',
-            headers={'Authorization': 'OAuth ' + self.token}).json()
-        self.fail_download(
-            {'shock_id': res['data']['id'],
-             'file_path': 'foo'
-             },
-            'Node {} has no file'.format(res['data']['id']),
-            exception=ShockException)
-        self.delete_shock_node(res['data']['id'])
-
+    
     def test_download_err_no_node_provided(self):
         self.fail_download(
             {'shock_id': '',
@@ -855,7 +875,7 @@ class DataFileUtilTest(unittest.TestCase):
             {'shock_id': '79261fd9-ae10-4a84-853d-1b8fcd57c8f23'},
             'Error copying Shock node ' +
             '79261fd9-ae10-4a84-853d-1b8fcd57c8f23: ' +
-            'err@node_CreateNodeUpload: not found',
+            'Invalid copy_data: invalid UUID length: 37',
             exception=ShockException)
 
     def test_copy_err_no_node_provided(self):
@@ -1288,7 +1308,6 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertEqual(os.stat(os.path.join("data", "zip1.zip")).st_size,
                          os.stat(ret1['copy_file_path']).st_size)
 
-
     def fail_download_web_file(self, params, error, exception=ValueError, startswith=False):
         with self.assertRaises(exception) as context:
             self.impl.download_web_file(self.ctx, params)
@@ -1379,9 +1398,9 @@ class DataFileUtilTest(unittest.TestCase):
 
         invalid_input_params = {
                         'download_type': 'FTP',
-                        'file_url': 'ftp://ftp.uconn.edu/48_hour/nonexist.txt'}
+                        'file_url': 'ftp://{}/{}'.format(self.ftp_domain, 'nonexist.txt')}
         error_msg = "File nonexist.txt does NOT exist in FTP path: "
-        error_msg += "ftp.uconn.edu/48_hour"
+        error_msg += self.ftp_domain + '/'
         self.fail_download_web_file(invalid_input_params, error_msg)
 
     def test_download_direct_link_uncompress_file(self):
@@ -1593,18 +1612,16 @@ class DataFileUtilTest(unittest.TestCase):
 
         fq_filename = "file1.txt"
 
-        with ftplib.FTP('ftp.uconn.edu') as ftp_connection:
+        with ftplib.FTP(self.ftp_domain) as ftp_connection:
             ftp_connection.login('anonymous', 'anonymous@domain.com')
-            ftp_connection.cwd("/48_hour/")
 
             if fq_filename not in ftp_connection.nlst():
-                fh = open(os.path.join("data", fq_filename), 'rb')
-                ftp_connection.storbinary('STOR file1.txt', fh)
-                fh.close()
+                with open(os.path.join("data", fq_filename), 'rb') as fh:
+                    ftp_connection.storbinary('STOR {}'.format(fq_filename), fh)
 
         params = {
             'download_type': 'FTP',
-            'file_url': 'ftp://ftp.uconn.edu/48_hour/file1.txt',
+            'file_url': 'ftp://{}/{}'.format(self.ftp_domain, fq_filename),
         }
 
         ret1 = self.impl.download_web_file(self.ctx, params)[0]
@@ -1618,18 +1635,16 @@ class DataFileUtilTest(unittest.TestCase):
 
         fq_filename = "file1.txt.bz"
 
-        with ftplib.FTP('ftp.uconn.edu') as ftp_connection:
+        with ftplib.FTP(self.ftp_domain) as ftp_connection:
             ftp_connection.login('anonymous', 'anonymous@domain.com')
-            ftp_connection.cwd("/48_hour/")
 
             if fq_filename not in ftp_connection.nlst():
-                fh = open(os.path.join("data", fq_filename), 'rb')
-                ftp_connection.storbinary('STOR file1.txt.bz', fh)
-                fh.close()
+                with open(os.path.join("data", fq_filename), 'rb') as fh:
+                    ftp_connection.storbinary('STOR {}'.format(fq_filename), fh)
 
         params = {
             'download_type': 'FTP',
-            'file_url': 'ftp://ftp.uconn.edu/48_hour/file1.txt.bz',
+            'file_url': 'ftp://{}/{}'.format(self.ftp_domain, fq_filename),
         }
 
         ret1 = self.impl.download_web_file(self.ctx, params)[0]
@@ -1643,18 +1658,16 @@ class DataFileUtilTest(unittest.TestCase):
 
         fq_filename = "zip1.zip"
 
-        with ftplib.FTP('ftp.uconn.edu') as ftp_connection:
+        with ftplib.FTP(self.ftp_domain) as ftp_connection:
             ftp_connection.login('anonymous', 'anonymous@domain.com')
-            ftp_connection.cwd("/48_hour/")
 
             if fq_filename not in ftp_connection.nlst():
-                fh = open(os.path.join("data", fq_filename), 'rb')
-                ftp_connection.storbinary('STOR zip1.zip', fh)
-                fh.close()
+                with open(os.path.join("data", fq_filename), 'rb') as fh:
+                    ftp_connection.storbinary('STOR {}'.format(fq_filename), fh)
 
         params = {
             'download_type': 'FTP',
-            'file_url': 'ftp://ftp.uconn.edu/48_hour/zip1.zip',
+            'file_url': 'ftp://{}/{}'.format(self.ftp_domain, fq_filename),
         }
 
         ret1 = self.impl.download_web_file(self.ctx, params)[0]
