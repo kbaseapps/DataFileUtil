@@ -105,7 +105,7 @@ def test_save_objects_sorted():
         ]
     assert res == expected
 
-    assert ws.save_objects.call_args == (({
+    ws.save_objects.assert_called_once_with({
         'id': 49778,
         'objects': [
             {
@@ -137,8 +137,7 @@ def test_save_objects_sorted():
                 },
              'provenance': {}
             }]
-        },),
-    )
+        })
 
     assert json.dumps(ws.save_objects.call_args[0][0]['objects'][0]['data']) == (
         '{"by": 1, "sorted": [3, 2, 1, {"1": "a", "2": "a", "3": "a", "4": "a"}], ' +
