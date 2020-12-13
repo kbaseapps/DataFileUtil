@@ -15,6 +15,21 @@ from installed_clients.baseclient import ServerError as WorkspaceError
 def log(message, prefix_newline=False):
     print(('\n' if prefix_newline else '') + str(time.time()) + ': ' + str(message))
 
+# Copies of this in AssemblyUtil and GenomeFileUtil may be redundant since we're sorting here
+# Note that insertion order is only maintained since python 3.6 and is only guaranteed since 3.7
+# In 3.6 it was an implementation detail.
+# As of 2020/12/12 Python 3.6 is provided in the kbase/sdkbase2 image
+def _sort_dict(in_struct):
+    """
+    Recursively sort a dictionary by dictionary keys.
+    """
+    if isinstance(in_struct, dict):
+        return {k: _sort_dict(in_struct[k]) for k in sorted(in_struct)}
+    elif isinstance(in_struct, list):
+        return [_sort_dict(k) for k in in_struct]
+    else:
+        return in_struct
+
 
 def save_objects(ws, params, prov):
     # TODO unit tests
@@ -42,10 +57,21 @@ def save_objects(ws, params, prov):
                 else:
                     prov_to_save = [{'input_ws_objects': extra_input_refs}]
 
-        keys = ['type', 'data', 'name', 'objid', 'meta', 'hidden']
+        keys = ['type', 'name', 'objid', 'meta', 'hidden']
         for k in keys:
             if k in o:
                 obj_to_save[k] = o[k]
+        """
+        Sorting the data is important for 2 reasons:
+        1) It prevents the workspace from rejecting the save because the sort takes too much memory.
+           The workspace puts limits on memory use because it has to service many apps / UIs / etc.
+           at once.
+        2) It distributes the sort across the app worker nodes rather than concentrating them on
+           the workspace node.
+        """
+        # TODO sort in WSLargeDataIO as well
+        if 'data' in o:
+            obj_to_save['data'] = _sort_dict(o['data'])
 
         obj_to_save['provenance'] = prov_to_save
         objs_to_save.append(obj_to_save)
@@ -53,6 +79,5 @@ def save_objects(ws, params, prov):
     try:
         return ws.save_objects({'id': wsid, 'objects': objs_to_save})
     except WorkspaceError as e:
-        log('Logging workspace error on save_objects: {}\n{}'.format(
-            e.message, e.data))
+        log('Logging workspace error on save_objects: {}\n{}'.format(e.message, e.data))
         raise

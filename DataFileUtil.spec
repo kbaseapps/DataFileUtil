@@ -350,13 +350,11 @@ module DataFileUtil {
             information to use the latest version.
         data - the object data.
         
-        Optional parameters:
-        One of an object name or id. If no name or id is provided the name
-            will be set to 'auto' with the object id appended as a string,
-            possibly with -\d+ appended if that object id already exists as a
-            name.
+        One of an object name or id:
         name - the name of the object.
         objid - the id of the object to save over.
+
+        Optional parameters:
         meta - arbitrary user-supplied metadata for the object,
             not to exceed 16kb; if the object type specifies automatic
             metadata extraction with the 'meta ws' annotation, and your
@@ -403,8 +401,16 @@ module DataFileUtil {
     } SaveObjectsParams;
     
     /* 
-        Save objects to the workspace. Saving over a deleted object undeletes
-        it.
+        Save objects to the workspace.
+
+        The objects will be sorted prior to saving to avoid the Workspace sort memory limit.
+        Note that workspace object refs in the object may cause the Workspace to resort the data
+        unless they are already in UPA format (e.g. #/#/#), so it is strongly recommended to
+        convert object refs to UPAs. 
+        
+        If the data is very large, using the WSLargeDataIO SDK module is advised.
+        
+        Saving over a deleted object undeletes it.
     */
     funcdef save_objects(SaveObjectsParams params)
         returns (list<object_info> info) authentication required;
