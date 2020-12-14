@@ -404,9 +404,9 @@ module DataFileUtil {
         Save objects to the workspace.
 
         The objects will be sorted prior to saving to avoid the Workspace sort memory limit.
-        Note that workspace object refs in the object may cause the Workspace to resort the data
-        unless they are already in UPA format (e.g. #/#/#), so it is strongly recommended to
-        convert object refs to UPAs. 
+        Note that if the object contains workspace object refs in mapping keys that may cause
+        the Workspace to resort the data. To avoid this, convert any refs in mapping keys to UPA
+        format (e.g. #/#/#, where # is a positive integer). 
         
         If the data is very large, using the WSLargeDataIO SDK module is advised.
         
