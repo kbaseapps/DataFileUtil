@@ -376,21 +376,21 @@ archiving.
         _retrieve_filepath: retrieve file name from download URL and return local file path
 
         """
-        file_name = None
         try:
-            response = requests.head(file_url, cookies=cookies)
-            if 'content-disposition' in response.headers:
-                content_disposition = response.headers['content-disposition']
-                file_name = content_disposition.split('filename="')[-1].split('";')[0].strip()
-            if not file_name:  # None or empty
-                self.log('Parsing file name directly from URL')
-                url = urlparse(file_url)
-                file_name = os.path.basename(url.path)
+            with requests.get(file_url, cookies=cookies, stream=True) as response:
+                try:
+                    content_disposition = response.headers['content-disposition']
+                except KeyError:
+                    self.log('Parsing file name directly from URL')
+                    url = urlparse(file_url)
+                    file_name = os.path.basename(url.path)
+                else:
+                    file_name = content_disposition.split('filename="')[-1].split('";')[0]
         except Exception as error:
             error_msg = 'Cannot connect to URL: {}\n'.format(file_url)
             error_msg += 'Exception: {}'.format(error)
-            raise ValueError(error_msg)   # XXX why is this a ValueError?
-        self.log('Retrieved file name from url: {}'.format(file_name))
+            raise ValueError(error_msg)
+        self.log(f'Retrieved file name from url: {file_name}')
         # Shorten any overly long filenames to avoid OSErrors
         # Our practical limit is 255 for eCryptfs
         if len(file_name) > 255:
