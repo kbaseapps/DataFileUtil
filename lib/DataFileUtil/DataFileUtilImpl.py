@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #BEGIN_HEADER
-import copy
+from urllib.parse import urlparse
 import errno
 import ftplib
 import gzip
@@ -12,8 +12,6 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
-import time
-from urllib.parse import urlparse
 import uuid
 import zipfile
 
@@ -21,6 +19,8 @@ import bz2file
 import magic
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
+
+from DataFileUtil.implementation import log, save_objects
 
 from installed_clients.AbstractHandleClient import AbstractHandle as HandleService
 from installed_clients.WorkspaceClient import Workspace
@@ -56,9 +56,9 @@ archiving.
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.1.2"
-    GIT_URL = "git@github.com:kbaseapps/DataFileUtil.git"
-    GIT_COMMIT_HASH = "d8091ef8acdee21c5b43d1b84d3983b04be3729e"
+    VERSION = "0.1.3"
+    GIT_URL = "https://github.com/kbaseapps/DataFileUtil.git"
+    GIT_COMMIT_HASH = "df19d64a4a70c6ab32d6248a216bc25be0ac35ba"
 
     #BEGIN_CLASS_HEADER
 
@@ -82,10 +82,6 @@ archiving.
     STAGING_GLOBAL_FILE_PREFIX = '/data/bulk/'
     STAGING_USER_FILE_PREFIX = '/staging/'
 
-    def log(self, message, prefix_newline=False):
-        print(('\n' if prefix_newline else '') +
-              str(time.time()) + ': ' + str(message))
-
     def endswith(self, string, suffixes):
         strl = string.lower()
         for s in suffixes:
@@ -97,10 +93,10 @@ archiving.
     # don't see a way to do that
     def gzip(self, oldfile):
         if self.endswith(oldfile, [self.GZ, self.GZIP, self.TGZ]):
-            self.log('File {} is already gzipped, skipping'.format(oldfile))
+            log('File {} is already gzipped, skipping'.format(oldfile))
             return oldfile
         newfile = oldfile + self.GZ
-        self.log('gzipping {} to {}'.format(oldfile, newfile))
+        log('gzipping {} to {}'.format(oldfile, newfile))
         with open(oldfile, 'rb') as s, gzip.open(newfile, 'wb') as t:
             shutil.copyfileobj(s, t)
         return newfile
@@ -109,10 +105,10 @@ archiving.
     # the pigz parallel compression program
     def _pigz_compress(self, oldfile, n_proc=None, compression_level=None):
         if self.endswith(oldfile, [self.GZ, self.GZIP, self.TGZ]):
-            self.log('File {} is already gzipped, skipping'.format(oldfile))
+            log('File {} is already gzipped, skipping'.format(oldfile))
             return oldfile
         newfile = oldfile + self.GZ
-        self.log('gzipping (with pigz) {} to {}'.format(oldfile, newfile))
+        log('gzipping (with pigz) {} to {}'.format(oldfile, newfile))
 
         # -f to force overwrite
         # --keep to retain the original file
@@ -158,7 +154,7 @@ archiving.
         if not f:
             f = os.path.basename(d)
         file_path = d + os.sep + f
-        self.log('Packing {} to {}'.format(d, pack))
+        log('Packing {} to {}'.format(d, pack))
         # tar is smart enough to not pack its own archive file into the new archive, zip isn't.
         # TODO is there a designated temp files dir in the scratch space? Nope.
         # check dir to archive is not self.tmp or its parent dir for zip
@@ -195,7 +191,7 @@ archiving.
 
     def _decompress(self, openfn, file_path, unpack):
         new_file = self._decompress_file_name(file_path)
-        self.log('decompressing {} to {} ...'.format(file_path, new_file))
+        log('decompressing {} to {} ...'.format(file_path, new_file))
         with openfn(file_path, 'rb') as s, tempfile.NamedTemporaryFile(
                 dir=self.tmp, delete=False) as tf:
             # don't create the target file until it's done decompressing
@@ -211,7 +207,7 @@ archiving.
     # of the passed in file open function
     def _pigz_decompress(self, file_path, unpack, n_proc=None):
         new_file = self._decompress_file_name(file_path)
-        self.log('decompressing (with pigz) {} to {} ...'.format(file_path, new_file))
+        log('decompressing (with pigz) {} to {} ...'.format(file_path, new_file))
 
         # --keep to retain the original file
         # --processes to limit the number of processes
@@ -250,7 +246,7 @@ archiving.
                 raise ValueError(
                     'File {} is tar file but only uncompress was specified'
                     .format(file_path))
-            self.log('unpacking {} ...'.format(file_path))
+            log('unpacking {} ...'.format(file_path))
             with tarfile.open(file_path) as tf:
                 self._check_members(tf.getnames())
                 tf.extractall(file_dir)
@@ -260,7 +256,7 @@ archiving.
                 raise ValueError(
                     'File {} is zip file but only uncompress was specified'
                     .format(file_path))
-            self.log('unpacking {} ...'.format(file_path))
+            log('unpacking {} ...'.format(file_path))
             with zipfile.ZipFile(file_path) as zf:
                 self._check_members(zf.namelist())
                 zf.extractall(file_dir)
@@ -273,7 +269,7 @@ archiving.
             if n.startswith('/') or n.startswith('..'):
                 err = ('Dangerous archive file - entry [{}] points to a ' +
                        'file outside the archive directory').format(m)
-                self.log(err)
+                log(err)
                 raise ValueError(err)
 
     def _unpack(self, file_path, unpack):
@@ -306,9 +302,9 @@ archiving.
         if not response.ok:
             try:
                 err = json.loads(response.content)['error'][0]
-            except:
+            except Exception:
                 # this means shock is down or not responding.
-                self.log("Couldn't parse response error content from Shock: " +
+                log("Couldn't parse response error content from Shock: " +
                          response.content)
                 response.raise_for_status()
             raise ShockException(errtxt + str(err))
@@ -410,8 +406,8 @@ archiving.
         try:
             download_state=subprocess.call(command)
         except Exception as e:
-            self.log('Error running wget')
-            self.log(e)
+            log('Error running wget')
+            log(e)
 
         return download_state
 
@@ -425,7 +421,7 @@ archiving.
         """
         copy_file_path = self._retrieve_filepath(file_url)
 
-        self.log('Connecting and downloading web source: {}'.format(
+        log('Connecting and downloading web source: {}'.format(
                                                                 file_url))
 
         success = False
@@ -442,7 +438,7 @@ archiving.
         if not success:
             raise ValueError('Dowload Failed!')
 
-        self.log('Downloaded file to {}'.format(copy_file_path))
+        log('Downloaded file to {}'.format(copy_file_path))
 
         return copy_file_path
 
@@ -472,14 +468,14 @@ archiving.
         if not file_url.startswith('https://www.dropbox.com/'):
             raise ValueError('Invalid DropBox Link: {}'.format(file_url))
 
-        self.log('Connecting DropBox link: {}'.format(file_url))
+        log('Connecting DropBox link: {}'.format(file_url))
         # translate dropbox URL for direct download
         if "?" not in file_url:
             force_download_link = file_url + '?raw=1'
         else:
             force_download_link = file_url.partition('?')[0] + '?raw=1'
 
-        self.log('Generating DropBox direct download link\n' +
+        log('Generating DropBox direct download link\n' +
                  ' from: {}\n to: {}'.format(file_url, force_download_link))
 
         copy_file_path = self._download_to_file(force_download_link)
@@ -505,7 +501,7 @@ archiving.
         """
         copy_file_path = self._retrieve_filepath(file_url, cookies)
 
-        self.log('Connecting and downloading web source: {}'.format(
+        log('Connecting and downloading web source: {}'.format(
                                                                 file_url))
 
         try:
@@ -513,7 +509,7 @@ archiving.
                 with open(copy_file_path, 'wb') as f:
                     for chunk in response.iter_content(chunk_size=1024):
                         f.write(chunk)
-                self.log('Downloaded file to {}'.format(copy_file_path))
+                log('Downloaded file to {}'.format(copy_file_path))
         except BaseException as error:
             error_msg = 'Cannot connect to URL: {}\n'.format(file_url)
             error_msg += 'Exception: {}'.format(error)
@@ -533,7 +529,7 @@ archiving.
         if not file_url.startswith('https://drive.google.com/'):
             raise ValueError('Invalid Google Drive Link: {}'.format(file_url))
 
-        self.log('Connecting Google Drive link: {}'.format(file_url))
+        log('Connecting Google Drive link: {}'.format(file_url))
         # translate Google Drive URL for direct download
         force_download_link_prefix = 'https://docs.google.com/uc?export=download'
 
@@ -555,7 +551,7 @@ archiving.
             if confirm_token:
                 force_download_link = force_download_link_prefix + '&confirm={}&id={}'.format(confirm_token, file_id)
 
-            self.log('Generating Google Drive direct download link\n' +
+            log('Generating Google Drive direct download link\n' +
                      ' from: {}\n to: {}'.format(file_url, force_download_link))
 
             copy_file_path = self._download_google_drive_to_file(force_download_link, response.cookies)
@@ -580,7 +576,7 @@ archiving.
         if not file_url.startswith('ftp://'):
             raise ValueError('Invalid FTP Link: {}'.format(file_url))
 
-        self.log('Connecting FTP link: {}'.format(file_url))
+        log('Connecting FTP link: {}'.format(file_url))
         ftp_url_format = re.match(r'ftp://.*:.*@.*/.*', file_url)
         # process ftp credentials
         if ftp_url_format:
@@ -595,7 +591,7 @@ archiving.
             ftp_file_name = re.search(
                 'ftp://.*:.*@.*/(.+$)', file_url).group(1)
         else:
-            self.log('Setting anonymous FTP user_name and password')
+            log('Setting anonymous FTP user_name and password')
             ftp_user_name = 'anonymous'
             ftp_password = 'anonymous@domain.com'
             ftp_domain = re.search('ftp://(.+?)/', file_url).group(1)
@@ -615,7 +611,7 @@ archiving.
             with open(copy_file_path, 'wb') as output:
                 ftp_connection.retrbinary('RETR {}'.format(ftp_file_name),
                                           output.write)
-            self.log('Copied FTP file to: {}'.format(copy_file_path))
+            log('Copied FTP file to: {}'.format(copy_file_path))
 
         copy_file_path = self._unpack(copy_file_path, True)
 
@@ -665,9 +661,9 @@ archiving.
         # note that the unit tests cannot easily test this. Be careful with changes here
         with requests.get(config['kbase-endpoint'] + '/shock-direct', allow_redirects=False) as r:
             if r.status_code == 302:
-                self.log('Using direct shock url for transferring files')
+                log('Using direct shock url for transferring files')
                 self.shock_effective = r.headers['Location']
-        self.log('Shock url: ' + self.shock_effective)
+        log('Shock url: ' + self.shock_effective)
         self.handle_url = config['handle-service-url']
         self.ws_url = config['workspace-url']
         self.scratch = config['scratch']
@@ -734,7 +730,7 @@ archiving.
 
         shock_url = self.shock_effective
         if handle_id:
-            self.log('Fetching info for handle: '+handle_id)
+            log('Fetching info for handle: '+handle_id)
             hs = HandleService(self.handle_url, token=token)
             handles = hs.hids_to_handles([handle_id])
             # don't override direct url if provided
@@ -758,7 +754,7 @@ archiving.
         attributes = resp_obj['data']['attributes']
         if os.path.isdir(file_path):
             file_path = os.path.join(file_path, node_file_name)
-        self.log('downloading shock node ' + shock_id + ' into file: ' + str(file_path))
+        log('downloading shock node ' + shock_id + ' into file: ' + str(file_path))
         with open(file_path, 'wb') as fhandle:
             with requests.get(node_url + '?download_raw', stream=True,
                               headers=headers, allow_redirects=True) as r:
@@ -776,7 +772,7 @@ archiving.
                'attributes': attributes,
                'file_path': file_path,
                'size': size}
-        self.log('downloading done')
+        log('downloading done')
         #END shock_to_file
 
         # At some point might do deeper type checking...
@@ -898,7 +894,7 @@ archiving.
         pack = params.get('pack')
         if pack:
             file_path = self._pack(file_path, pack)
-        self.log('uploading file ' + str(file_path) + ' into shock node')
+        log('uploading file ' + str(file_path) + ' into shock node')
         with open(os.path.abspath(file_path), 'rb') as data_file:
             # Content-Length header is required for transition to
             # https://github.com/kbase/blobstore
@@ -920,7 +916,7 @@ archiving.
                'size': shock_data['file']['size']}
         if params.get('make_handle'):
             out['handle'] = self.make_handle(shock_data, token)
-        self.log('uploading done into shock node: ' + shock_id)
+        log('uploading done into shock node: ' + shock_id)
         #END file_to_shock
 
         # At some point might do deeper type checking...
@@ -1301,8 +1297,13 @@ archiving.
 
     def save_objects(self, ctx, params):
         """
-        Save objects to the workspace. Saving over a deleted object undeletes
-        it.
+        Save objects to the workspace.
+        The objects will be sorted prior to saving to avoid the Workspace sort memory limit.
+        Note that if the object contains workspace object refs in mapping keys that may cause
+        the Workspace to resort the data. To avoid this, convert any refs in mapping keys to UPA
+        format (e.g. #/#/#, where # is a positive integer). 
+        If the data is very large, using the WSLargeDataIO SDK module is advised.
+        Saving over a deleted object undeletes it.
         :param params: instance of type "SaveObjectsParams" (Input parameters
            for the "save_objects" function. Required parameters: id - the
            numerical ID of the workspace. objects - the objects to save. The
@@ -1311,15 +1312,12 @@ archiving.
            type "ObjectSaveData" (An object and associated data required for
            saving. Required parameters: type - the workspace type string for
            the object. Omit the version information to use the latest
-           version. data - the object data. Optional parameters: One of an
-           object name or id. If no name or id is provided the name will be
-           set to 'auto' with the object id appended as a string, possibly
-           with -\d+ appended if that object id already exists as a name.
-           name - the name of the object. objid - the id of the object to
-           save over. meta - arbitrary user-supplied metadata for the object,
-           not to exceed 16kb; if the object type specifies automatic
-           metadata extraction with the 'meta ws' annotation, and your
-           metadata name conflicts, then your metadata will be silently
+           version. data - the object data. One of an object name or id: name
+           - the name of the object. objid - the id of the object to save
+           over. Optional parameters: meta - arbitrary user-supplied metadata
+           for the object, not to exceed 16kb; if the object type specifies
+           automatic metadata extraction with the 'meta ws' annotation, and
+           your metadata name conflicts, then your metadata will be silently
            overwritten. hidden - true if this object should not be listed
            when listing workspace objects. extra_provenance_input_refs -
            (optional) if set, these refs will be appended to the primary
@@ -1358,45 +1356,9 @@ archiving.
         # ctx is the context object
         # return variables are: info
         #BEGIN save_objects
-        prov = ctx.provenance()
-        objs = params.get('objects')
-        if not objs:
-            raise ValueError('Required parameter objects missing')
-        wsid = params.get('id')
-        if not wsid:
-            raise ValueError('Required parameter id missing')
-        objs_to_save = []
-        for o in objs:
-            obj_to_save = {}
-
-            prov_to_save = prov
-            if 'extra_provenance_input_refs' in o:
-                prov_to_save = copy.deepcopy(prov)  # need to make a copy so we don't clobber other objects
-                extra_input_refs = o['extra_provenance_input_refs']
-                if extra_input_refs:
-                    if len(prov) > 0:
-                        if 'input_ws_objects' in prov[0]:
-                            prov_to_save[0]['input_ws_objects'].extend(extra_input_refs)
-                        else:
-                            prov_to_save[0]['input_ws_objects'] = extra_input_refs
-                    else:
-                        prov_to_save = [{'input_ws_objects': extra_input_refs}]
-
-            keys = ['type', 'data', 'name', 'objid', 'meta', 'hidden']
-            for k in keys:
-                if k in o:
-                    obj_to_save[k] = o[k]
-
-            obj_to_save['provenance'] = prov_to_save
-            objs_to_save.append(obj_to_save)
-
         ws = Workspace(self.ws_url, token=ctx['token'])
-        try:
-            info = ws.save_objects({'id': wsid, 'objects': objs_to_save})
-        except WorkspaceError as e:
-            self.log('Logging workspace error on save_objects: {}\n{}'.format(
-                e.message, e.data))
-            raise
+        prov = ctx.provenance()
+        info = save_objects(ws, params, prov)
         #END save_objects
 
         # At some point might do deeper type checking...
@@ -1463,7 +1425,7 @@ archiving.
         try:
             retobjs = ws.get_objects2(input_)['data']
         except WorkspaceError as e:
-            self.log('Logging workspace error on get_objects: {}\n{}'.format(
+            log('Logging workspace error on get_objects: {}\n{}'.format(
                 e.message, e.data))
             raise
         results = []
@@ -1476,7 +1438,7 @@ archiving.
             hs = 'handle_stacktrace'
             if he in o or hs in o:
                 ref = self.make_ref(o['info'])
-                self.log('Handle error for object {}: {}.\nStacktrace: {}'
+                log('Handle error for object {}: {}.\nStacktrace: {}'
                          .format(ref, o.get(he), o.get(hs)))
                 if ignore_err:
                     res = None
@@ -1548,10 +1510,10 @@ archiving.
         staging_file_name = os.path.basename(staging_file_subdir_path)
         staging_file_path = self._get_staging_file_path(ctx['user_id'], staging_file_subdir_path)
 
-        self.log('Start downloading staging file: %s' % staging_file_path)
+        log('Start downloading staging file: %s' % staging_file_path)
         shutil.copy2(staging_file_path, self.tmp)
         copy_file_path = os.path.join(self.tmp, staging_file_name)
-        self.log('Copied staging file from %s to %s' %
+        log('Copied staging file from %s to %s' %
                  (staging_file_path, copy_file_path))
 
         copy_file_path = self._unpack(copy_file_path, True)
@@ -1590,7 +1552,7 @@ archiving.
         file_url = params.get('file_url')
         download_type = params.get('download_type')
 
-        self.log('Start downloading web file from: {}'.format(file_url))
+        log('Start downloading web file from: {}'.format(file_url))
         copy_file_path = self._download_file(download_type, file_url)
 
         results = {'copy_file_path': copy_file_path}
