@@ -1,3 +1,7 @@
+#0.1.4
+- Clean up the way filenames are fetched from a URL, using either the URL itself or a header
+- Limit filename length to at most 255 characters to prevent filesystem errors
+
 #0.1.3
 - tidying for github consistency
 - Added Actions workflow for KB SDK tests
