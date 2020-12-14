@@ -377,7 +377,7 @@ archiving.
                 try:
                     content_disposition = response.headers['content-disposition']
                 except KeyError:
-                    self.log('Parsing file name directly from URL')
+                    log('Parsing file name directly from URL')
                     url = urlparse(file_url)
                     file_name = os.path.basename(url.path)
                 else:
@@ -386,7 +386,7 @@ archiving.
             error_msg = 'Cannot connect to URL: {}\n'.format(file_url)
             error_msg += 'Exception: {}'.format(error)
             raise ValueError(error_msg)
-        self.log(f'Retrieved file name from url: {file_name}')
+        log(f'Retrieved file name from url: {file_name}')
         # Shorten any overly long filenames to avoid OSErrors
         # Our practical limit is 255 for eCryptfs
         if len(file_name) > 255:
