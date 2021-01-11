@@ -1,11 +1,9 @@
-#0.1.5
-- Clean up the way filenames are fetched from a URL, using either the URL itself or a header
-- Limit filename length to at most 255 characters to prevent filesystem errors
-
 # 0.1.4
 - objects saved to the workspace are now sorted prior to serialization. This prevents errors due
   to workspace sort memory limits, and also moves the sort compute load (which is the most
   expensive part of saving objects) from the workspace server node to the SDK job nodes.
+- Clean up the way filenames are fetched from a URL, using either the URL itself or a header
+- Limit filename length to at most 255 characters to prevent filesystem errors
 
 # 0.1.3
 - tidying for github consistency
