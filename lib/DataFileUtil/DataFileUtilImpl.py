@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 #BEGIN_HEADER
-from urllib.parse import urlparse
 import errno
 import ftplib
 import gzip
@@ -21,6 +20,7 @@ import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 from DataFileUtil.implementation import log, save_objects
+from DataFileUtil.utils.retrieve_filename import retrieve_filename
 
 from installed_clients.AbstractHandleClient import AbstractHandle as HandleService
 from installed_clients.WorkspaceClient import Workspace
@@ -251,7 +251,7 @@ archiving.
                 self._check_members(tf.getnames())
                 tf.extractall(file_dir)
         if file_type in ['application/' + x for x in ('zip', 'x-zip-compressed')]:
-                        # x-compressed is apparently both .Z and .zip?
+            # x-compressed is apparently both .Z and .zip?
             if not unpack:
                 raise ValueError(
                     'File {} is zip file but only uncompress was specified'
@@ -305,7 +305,7 @@ archiving.
             except Exception:
                 # this means shock is down or not responding.
                 log("Couldn't parse response error content from Shock: " +
-                         response.content)
+                    response.content)
                 response.raise_for_status()
             raise ShockException(errtxt + str(err))
 
@@ -367,44 +367,16 @@ archiving.
 
         return copy_file_path
 
-    def _retrieve_filepath(self, file_url, cookies=None):
-        """
-        _retrieve_filepath: retrieve file name from download URL and return local file path
-
-        """
-        try:
-            with requests.get(file_url, cookies=cookies, stream=True) as response:
-                try:
-                    content_disposition = response.headers['content-disposition']
-                except KeyError:
-                    log('Parsing file name directly from URL')
-                    url = urlparse(file_url)
-                    file_name = os.path.basename(url.path)
-                else:
-                    file_name = content_disposition.split('filename="')[-1].split('";')[0]
-        except Exception as error:
-            error_msg = 'Cannot connect to URL: {}\n'.format(file_url)
-            error_msg += 'Exception: {}'.format(error)
-            raise ValueError(error_msg)
-        log(f'Retrieved file name from url: {file_name}')
-        # Shorten any overly long filenames to avoid OSErrors
-        # Our practical limit is 255 for eCryptfs
-        if len(file_name) > 255:
-            (basename, ext) = os.path.splitext(file_name)
-            file_name = basename[0:255-len(ext)] + ext
-        copy_file_path = os.path.join(self.tmp, file_name)
-        return copy_file_path
-
     def _wget_dl(self, url, destination_file, try_number=20, time_out=1800):
         """
         _wget_dl: run wget command tool
         """
 
         download_state = 1
-        command=["wget", "-c", "--no-verbose", "-O", destination_file,
-                 "-t", str(try_number), "-T", str(time_out), url]
+        command = ["wget", "-c", "--no-verbose", "-O", destination_file,
+                   "-t", str(try_number), "-T", str(time_out), url]
         try:
-            download_state=subprocess.call(command)
+            download_state = subprocess.call(command)
         except Exception as e:
             log('Error running wget')
             log(e)
@@ -419,7 +391,8 @@ archiving.
         file_url: direct download URL
 
         """
-        copy_file_path = self._retrieve_filepath(file_url)
+        copy_filename = retrieve_filename(file_url)
+        copy_file_path = os.path.join(self.tmp, copy_filename)
 
         log('Connecting and downloading web source: {}'.format(
                                                                 file_url))
@@ -476,7 +449,7 @@ archiving.
             force_download_link = file_url.partition('?')[0] + '?raw=1'
 
         log('Generating DropBox direct download link\n' +
-                 ' from: {}\n to: {}'.format(file_url, force_download_link))
+            ' from: {}\n to: {}'.format(file_url, force_download_link))
 
         copy_file_path = self._download_to_file(force_download_link)
         copy_file_path = self._unpack(copy_file_path, True)
@@ -499,7 +472,8 @@ archiving.
         params:
         file_url: direct download URL
         """
-        copy_file_path = self._retrieve_filepath(file_url, cookies)
+        copy_filename = self._retrieve_filepath(file_url, cookies)
+        copy_file_path = os.path.join(self.tmp, copy_filename)
 
         log('Connecting and downloading web source: {}'.format(
                                                                 file_url))
@@ -552,7 +526,7 @@ archiving.
                 force_download_link = force_download_link_prefix + '&confirm={}&id={}'.format(confirm_token, file_id)
 
             log('Generating Google Drive direct download link\n' +
-                     ' from: {}\n to: {}'.format(file_url, force_download_link))
+                ' from: {}\n to: {}'.format(file_url, force_download_link))
 
             copy_file_path = self._download_google_drive_to_file(force_download_link, response.cookies)
             copy_file_path = self._unpack(copy_file_path, True)
@@ -675,7 +649,6 @@ archiving.
         self.PIGZ_COMPRESSION_LEVEL = config['pigz_compression_level']
         #END_CONSTRUCTOR
         pass
-
 
     def shock_to_file(self, ctx, params):
         """
@@ -899,7 +872,7 @@ archiving.
             # Content-Length header is required for transition to
             # https://github.com/kbase/blobstore
             files = {'upload': (os.path.basename(file_path), data_file, None,
-                {'Content-Length': os.path.getsize(file_path)})}
+                     {'Content-Length': os.path.getsize(file_path)})}
             mpe = MultipartEncoder(fields=files)
             headers['content-type'] = mpe.content_type
             response = requests.post(
@@ -930,8 +903,8 @@ archiving.
         """
         Using the same logic as unpacking a Shock file, this method will cause
         any bzip or gzip files to be uncompressed, and then unpack tar and zip
-        archive files (uncompressing gzipped or bzipped archive files if 
-        necessary). If the file is an archive, it will be unbundled into the 
+        archive files (uncompressing gzipped or bzipped archive files if
+        necessary). If the file is an archive, it will be unbundled into the
         directory containing the original output file.
         :param params: instance of type "UnpackFileParams" -> structure:
            parameter "file_path" of String
@@ -1301,7 +1274,7 @@ archiving.
         The objects will be sorted prior to saving to avoid the Workspace sort memory limit.
         Note that if the object contains workspace object refs in mapping keys that may cause
         the Workspace to resort the data. To avoid this, convert any refs in mapping keys to UPA
-        format (e.g. #/#/#, where # is a positive integer). 
+        format (e.g. #/#/#, where # is a positive integer).
         If the data is very large, using the WSLargeDataIO SDK module is advised.
         Saving over a deleted object undeletes it.
         :param params: instance of type "SaveObjectsParams" (Input parameters
@@ -1439,7 +1412,7 @@ archiving.
             if he in o or hs in o:
                 ref = self.make_ref(o['info'])
                 log('Handle error for object {}: {}.\nStacktrace: {}'
-                         .format(ref, o.get(he), o.get(hs)))
+                    .format(ref, o.get(he), o.get(hs)))
                 if ignore_err:
                     res = None
                 else:
@@ -1514,7 +1487,7 @@ archiving.
         shutil.copy2(staging_file_path, self.tmp)
         copy_file_path = os.path.join(self.tmp, staging_file_name)
         log('Copied staging file from %s to %s' %
-                 (staging_file_path, copy_file_path))
+            (staging_file_path, copy_file_path))
 
         copy_file_path = self._unpack(copy_file_path, True)
 
@@ -1564,6 +1537,7 @@ archiving.
                              'results is not type dict as required.')
         # return the results
         return [results]
+
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': 'OK',
