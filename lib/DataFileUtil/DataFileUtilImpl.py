@@ -472,7 +472,7 @@ archiving.
         params:
         file_url: direct download URL
         """
-        copy_filename = self._retrieve_filepath(file_url, cookies)
+        copy_filename = retrieve_filename(file_url, cookies)
         copy_file_path = os.path.join(self.tmp, copy_filename)
 
         log('Connecting and downloading web source: {}'.format(
