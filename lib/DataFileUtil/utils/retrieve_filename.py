@@ -1,11 +1,12 @@
 """
 Fetch the file name from a remote URL.
 """
-import requests
-from typing import Optional
 from requests.cookies import RequestsCookieJar
+from typing import Optional
 from urllib.parse import urlparse
+from uuid import uuid4
 import os
+import requests
 
 # Local
 from DataFileUtil.implementation import log
@@ -36,10 +37,15 @@ def retrieve_filename(file_url: str, cookies: Optional[RequestsCookieJar] = None
         error_msg = 'Cannot connect to URL: {}\n'.format(file_url)
         error_msg += 'Exception: {}'.format(error)
         raise ValueError(error_msg)
-    log(f'Retrieved file name from url: {file_name}')
     # Shorten any overly long filenames to avoid OSErrors
     # Our practical limit is 255 for eCryptfs
     if len(file_name) > 255:
         (basename, ext) = os.path.splitext(file_name)
         file_name = basename[0:255-len(ext)] + ext
+    file_name = file_name.strip()
+    if len(file_name) == 0:
+        # Handle the case where there is no URL filepath, and no content header
+        # We just generate a unique name
+        file_name = str(uuid4())
+    log(f'Retrieved file name: {file_name}')
     return file_name
