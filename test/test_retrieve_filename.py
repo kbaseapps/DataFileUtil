@@ -29,16 +29,6 @@ class RetrieveFilenameTest(unittest.TestCase):
         self.assertTrue(isinstance(fn, str))
         self.assertTrue(len(fn) > 0)
 
-    def test_use_url_filepath(self):
-        """
-        Test the case where we cannot fetch from the URL, so
-        we fallback to the url filepath.
-        """
-        expected_fn = str(uuid4()) + ".txt"
-        url = f"https://www.example.com/{expected_fn}"
-        fn = retrieve_filename(url)
-        self.assertEqual(fn, expected_fn)
-
     def test_use_resp_header(self):
         """
         Test the case where we get the filename from the response header.
