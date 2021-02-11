@@ -16,7 +16,7 @@ def retrieve_filename(file_url: str, cookies: Optional[RequestsCookieJar] = None
     """
     Fetch the file name from a URL using the Content-Disposition header,
     falling back to the filename found in the URL itself. We shorten any
-    filename to at most 256 characters to avoid any filesystem errors.
+    filename to at most 255 characters to avoid any filesystem errors.
     If we are unable to retrieve a filename from either the header or URL path,
     then we generate a UUID and use that (without any extension).
     Args:

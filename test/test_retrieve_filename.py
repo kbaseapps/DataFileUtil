@@ -47,14 +47,25 @@ class RetrieveFilenameTest(unittest.TestCase):
         fn = retrieve_filename(url)
         self.assertEqual(fn, expected_fn)
 
-    def test_filename_truncation(self):
+    def test_filename_truncation_with_ext(self):
         """
-        Test the case where the retrieved filename is too long, so we truncate
-        to 255 chars.
+        Test the case where the retrieved filename (with extension) is too
+        long, so we truncate to 255 chars.
         """
         ext = ".xyz"
         given_fn = str(uuid4()) * 20 + ext
         url = f"https://www.example.com/{given_fn}"
         expected_fn = given_fn[0:252] + ext
+        fn = retrieve_filename(url)
+        self.assertEqual(fn, expected_fn)
+
+    def test_filename_truncation_no_ext(self):
+        """
+        Test the case where the retrieved filename (without extension) is too
+        long, so we truncate to 255 chars.
+        """
+        given_fn = str(uuid4()) * 20
+        url = f"https://www.example.com/{given_fn}"
+        expected_fn = given_fn[0:255]
         fn = retrieve_filename(url)
         self.assertEqual(fn, expected_fn)
