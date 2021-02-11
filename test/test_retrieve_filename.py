@@ -11,7 +11,7 @@ from uuid import uuid4
 from DataFileUtil.utils.retrieve_filename import retrieve_filename
 
 
-class RetrieveFilepathTest(unittest.TestCase):
+class RetrieveFilenameTest(unittest.TestCase):
 
     def test_invalid_url(self):
         url = "xyz"
@@ -62,8 +62,9 @@ class RetrieveFilepathTest(unittest.TestCase):
         Test the case where the retrieved filename is too long, so we truncate
         to 255 chars.
         """
-        given_fn = str(uuid4()) * 20
+        ext = ".xyz"
+        given_fn = str(uuid4()) * 20 + ext
         url = f"https://www.example.com/{given_fn}"
-        expected_fn = given_fn[0:255]
+        expected_fn = given_fn[0:252] + ext
         fn = retrieve_filename(url)
         self.assertEqual(fn, expected_fn)
