@@ -55,7 +55,7 @@ class RetrieveFilenameTest(unittest.TestCase):
         ext = ".xyz"
         given_fn = str(uuid4()) * 20 + ext
         url = f"https://www.example.com/{given_fn}"
-        expected_fn = given_fn[0:252] + ext
+        expected_fn = given_fn[0:251] + ext
         fn = retrieve_filename(url)
         self.assertEqual(fn, expected_fn)
 
