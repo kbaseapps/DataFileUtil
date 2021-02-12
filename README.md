@@ -58,7 +58,8 @@ dfu = DataFileUtil(self.callback_url)
 ret = dfu.shock_to_file(params)
 ```
 
-Download files from external URL:
+#### Download files from external URL:
+
 ```python
 fwdpath = dfu.download_web_file(
                         {'file_url': fwd,
@@ -71,7 +72,12 @@ revpath = dfu.download_web_file(
 ```
 
 
+**Retrieval of the remote filename**:
 
+* DFU will use the `Content-Disposition` header from the remote URL to set the filename, if present
+* Without the above header, we will fall back to using the URL path for the filename, including extension (but minus any query parameters or hash value).
+* If the filename is longer than 255 characters, then we will truncate it to that maximum length (without losing the extension).
+* If we are unable to retrieve a filename from a header or the URL, then the file will be assigned a UUID without any extension.
 
 
 #### Documentation dependencies
