@@ -13,6 +13,7 @@ RUN pip install semver \
     && pip install ftputil \
     && pip install ipython==5.3.0 \
     && pip install pyftpdlib==1.5.6 \
+    && pip install google-api-python-client \
     && sudo apt-get install nano
 # -----------------------------------------
 
