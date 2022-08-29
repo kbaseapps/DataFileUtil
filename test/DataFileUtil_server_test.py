@@ -1032,7 +1032,7 @@ class DataFileUtilTest(unittest.TestCase):
                                              }
                                             ]
                                 },
-                               'Object 1, foo, has no data',
+                               'Object #1, foo: no data',
                                exception=WorkspaceError)
 
     def test_save_objects_with_extra_prov_refs(self):
@@ -1168,7 +1168,7 @@ class DataFileUtilTest(unittest.TestCase):
                          ]
              })[0][0]
         self.delete_shock_node(ret1['shock_id'])
-        err = 'The Handle Manager reported a problem while attempting to set Handle ACLs'
+        err = 'The Handle Service reported a problem while attempting to set Handle ACLs'
         self.fail_get_objects({'object_refs': [str(ws) + '/bad_handle']},
                               err, exception=HandleError)
 
