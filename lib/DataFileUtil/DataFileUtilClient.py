@@ -167,8 +167,8 @@ class DataFileUtil(object):
         """
         Using the same logic as unpacking a Shock file, this method will cause
         any bzip or gzip files to be uncompressed, and then unpack tar and zip
-        archive files (uncompressing gzipped or bzipped archive files if 
-        necessary). If the file is an archive, it will be unbundled into the 
+        archive files (uncompressing gzipped or bzipped archive files if
+        necessary). If the file is an archive, it will be unbundled into the
         directory containing the original output file.
         :param params: instance of type "UnpackFileParams" -> structure:
            parameter "file_path" of String
@@ -176,6 +176,40 @@ class DataFileUtil(object):
            "file_path" of String
         """
         return self._client.run_job('DataFileUtil.unpack_file',
+                                    [params], self._service_ver, context)
+
+    def unpack_files(self, params, context=None):
+        """
+        Using the same logic as unpacking a Shock file, this method will cause
+        any bzip or gzip files to be uncompressed, and then unpack tar and zip
+        archive files (uncompressing gzipped or bzipped archive files if 
+        necessary). If the file is an archive, it will be unbundled into the 
+        directory containing the original output file.
+        The ordering of the input and output files is preserved in the input and output lists.
+        :param params: instance of list of type "UnpackFilesParams" (Input
+           parameters for the unpack_files function. Required parameter:
+           file_path - the path to the file to unpack. The file will be
+           unpacked into the file's parent directory. Optional parameter:
+           unpack - either 'uncompress' or 'unpack'. 'uncompress' will cause
+           any bzip or gzip files to be uncompressed. 'unpack' will behave
+           the same way, but it will also unpack tar and zip archive files
+           (uncompressing gzipped or bzipped archive files if necessary). If
+           'uncompress' is specified and an archive file is encountered, an
+           error will be thrown. If the file is an archive, it will be
+           unbundled into the directory containing the original output file.
+           Defaults to 'unpack'. Note that if the file name (either as
+           provided by the user or by Shock) without the a decompression
+           extension (e.g. .gz, .zip or .tgz -> .tar) points to an existing
+           file and unpack is specified, that file will be overwritten by the
+           decompressed Shock file.) -> structure: parameter "file_path" of
+           String, parameter "unpack" of String
+        :returns: instance of list of type "UnpackFilesResult" (Output
+           parameters for the unpack_files function. file_path - the path to
+           the unpacked file, or in the case of archive files, the path to
+           the original archive file.) -> structure: parameter "file_path" of
+           String
+        """
+        return self._client.run_job('DataFileUtil.unpack_files',
                                     [params], self._service_ver, context)
 
     def pack_file(self, params, context=None):
@@ -361,7 +395,7 @@ class DataFileUtil(object):
         The objects will be sorted prior to saving to avoid the Workspace sort memory limit.
         Note that if the object contains workspace object refs in mapping keys that may cause
         the Workspace to resort the data. To avoid this, convert any refs in mapping keys to UPA
-        format (e.g. #/#/#, where # is a positive integer). 
+        format (e.g. #/#/#, where # is a positive integer).
         If the data is very large, using the WSLargeDataIO SDK module is advised.
         Saving over a deleted object undeletes it.
         :param params: instance of type "SaveObjectsParams" (Input parameters
