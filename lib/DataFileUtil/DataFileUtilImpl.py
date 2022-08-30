@@ -31,6 +31,10 @@ from installed_clients.baseclient import ServerError as WorkspaceError
 class ShockException(Exception):
     pass
 
+
+_UNCOMPRESS = "uncompress"
+_UNPACK = "unpack"
+
 #END_HEADER
 
 
@@ -56,9 +60,9 @@ archiving.
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.1.3"
+    VERSION = "0.2.0"
     GIT_URL = "https://github.com/kbaseapps/DataFileUtil.git"
-    GIT_COMMIT_HASH = "df19d64a4a70c6ab32d6248a216bc25be0ac35ba"
+    GIT_COMMIT_HASH = "579a0928d7f4ce3713e31adfea216815110ecd5e"
 
     #BEGIN_CLASS_HEADER
 
@@ -648,7 +652,6 @@ archiving.
         self.PIGZ_N_PROCESSES = config['pigz_n_processes']
         self.PIGZ_COMPRESSION_LEVEL = config['pigz_compression_level']
         #END_CONSTRUCTOR
-        pass
 
     def shock_to_file(self, ctx, params):
         """
@@ -736,11 +739,11 @@ archiving.
                     if not chunk:
                         break
                     fhandle.write(chunk)
-        unpack = params.get('unpack')
+        unpack = params.get(_UNPACK)
         if unpack:
-            if unpack not in ['unpack', 'uncompress']:
+            if unpack not in [_UNPACK, _UNCOMPRESS]:
                 raise ValueError('Illegal unpack value: ' + str(unpack))
-            file_path = self._unpack(file_path, unpack == 'unpack')
+            file_path = self._unpack(file_path, unpack == _UNPACK)
         out = {'node_file_name': node_file_name,
                'attributes': attributes,
                'file_path': file_path,
@@ -928,6 +931,67 @@ archiving.
         if not isinstance(out, dict):
             raise ValueError('Method unpack_file return value ' +
                              'out is not type dict as required.')
+        # return the results
+        return [out]
+
+    def unpack_files(self, ctx, params):
+        """
+        Using the same logic as unpacking a Shock file, this method will cause
+        any bzip or gzip files to be uncompressed, and then unpack tar and zip
+        archive files (uncompressing gzipped or bzipped archive files if 
+        necessary). If the file is an archive, it will be unbundled into the 
+        directory containing the original output file.
+        The ordering of the input and output files is preserved in the input and output lists.
+        :param params: instance of list of type "UnpackFilesParams" (Input
+           parameters for the unpack_files function. Required parameter:
+           file_path - the path to the file to unpack. The file will be
+           unpacked into the file's parent directory. Optional parameter:
+           unpack - either 'uncompress' or 'unpack'. 'uncompress' will cause
+           any bzip or gzip files to be uncompressed. 'unpack' will behave
+           the same way, but it will also unpack tar and zip archive files
+           (uncompressing gzipped or bzipped archive files if necessary). If
+           'uncompress' is specified and an archive file is encountered, an
+           error will be thrown. If the file is an archive, it will be
+           unbundled into the directory containing the original output file.
+           Defaults to 'unpack'. Note that if the file name (either as
+           provided by the user or by Shock) without the a decompression
+           extension (e.g. .gz, .zip or .tgz -> .tar) points to an existing
+           file and unpack is specified, that file will be overwritten by the
+           decompressed Shock file.) -> structure: parameter "file_path" of
+           String, parameter "unpack" of String
+        :returns: instance of list of type "UnpackFilesResult" (Output
+           parameters for the unpack_files function. file_path - the path to
+           the unpacked file, or in the case of archive files, the path to
+           the original archive file.) -> structure: parameter "file_path" of
+           String
+        """
+        # ctx is the context object
+        # return variables are: out
+        #BEGIN unpack_files
+        del ctx
+        # could do all the error checking first to avoid partial unpacks, but that doesn't
+        # seem like a major problem, so just do it Q&D for now.
+        out = []
+        if not params:
+            raise ValueError("Must provide at least one input parameter dictionary in a list")
+        for i, param in enumerate(params, start=1):
+            file_path = param.get('file_path')
+            if not file_path:
+                raise ValueError(f'Must provide file path for param #{i}')
+            unpack = param.get(_UNPACK)
+            if unpack not in [None, _UNPACK, _UNCOMPRESS]:
+                raise ValueError(f'Illegal unpack value for param #{i}: {unpack}')
+            unpack = unpack is None or unpack == _UNPACK
+            try:
+                out.append({'file_path': self._unpack(str(file_path), unpack)})
+            except Exception as e:
+                raise ValueError(f"Error unpacking file from param #{i}: {str(e)}") from e
+        #END unpack_files
+
+        # At some point might do deeper type checking...
+        if not isinstance(out, list):
+            raise ValueError('Method unpack_files return value ' +
+                             'out is not type list as required.')
         # return the results
         return [out]
 

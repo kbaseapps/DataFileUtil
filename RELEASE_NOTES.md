@@ -1,3 +1,6 @@
+# 0.2.0
+- added `unpack_files` function
+
 # 0.1.4
 - objects saved to the workspace are now sorted prior to serialization. This prevents errors due
   to workspace sort memory limits, and also moves the sort compute load (which is the most

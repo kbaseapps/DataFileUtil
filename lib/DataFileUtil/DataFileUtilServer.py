@@ -359,6 +359,10 @@ class Application(object):
                              name='DataFileUtil.unpack_file',
                              types=[dict])
         self.method_authentication['DataFileUtil.unpack_file'] = 'required'  # noqa
+        self.rpc_service.add(impl_DataFileUtil.unpack_files,
+                             name='DataFileUtil.unpack_files',
+                             types=[list])
+        self.method_authentication['DataFileUtil.unpack_files'] = 'required'  # noqa
         self.rpc_service.add(impl_DataFileUtil.pack_file,
                              name='DataFileUtil.pack_file',
                              types=[dict])

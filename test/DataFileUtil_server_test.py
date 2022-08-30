@@ -8,10 +8,12 @@ import tarfile
 import tempfile
 import time
 import unittest
+import uuid
 import zipfile
 from configparser import ConfigParser
 from os import environ
 from unittest.mock import patch
+from pathlib import Path
 
 import requests
 import semver
@@ -287,6 +289,125 @@ class DataFileUtilTest(unittest.TestCase):
 
         os.remove(zip_file_path)
         os.remove(txt_file_path)
+
+    def test_unpack_files(self):
+        # the low level unpack method is well tested by other methods-
+        # here we just want to be sure the impl.unpack_files is behaving
+        # as expected
+        tmp_dir = Path(self.cfg['scratch'])
+        testdir1 = self._make_temp_dir(tmp_dir)
+        testdir2 = self._make_temp_dir(tmp_dir)
+        testdir3 = self._make_temp_dir(tmp_dir)
+        testdir4 = self._make_temp_dir(tmp_dir)
+        testdir5 = self._make_temp_dir(tmp_dir)
+
+        data_dir = Path('./data')
+        shutil.copy(data_dir / 'file1.txt.gz', testdir1)
+        shutil.copy(data_dir / 'file2.txt.gz', testdir2)
+        shutil.copy(data_dir / 'tar1.tgz', testdir3)
+        shutil.copy(data_dir / 'zip1.zip', testdir4)
+        shutil.copy(data_dir / 'file2.txt', testdir5)
+
+        res = self.impl.unpack_files(self.ctx, [
+            {
+                'file_path': testdir1 / 'file1.txt.gz',
+            },
+            {
+                'file_path': testdir2 / 'file2.txt.gz',
+                'unpack': 'uncompress'
+            },
+            {
+                'file_path': testdir3 / 'tar1.tgz',
+            },
+            {
+                'file_path': testdir4 / 'zip1.zip',
+                'unpack': 'unpack'
+            },
+            {
+                'file_path': testdir5 / 'file2.txt',
+            },
+        ])[0]
+        self.assertEqual(res[0]['file_path'], str(testdir1 / 'file1.txt'))
+        self._check_file_contents(testdir1 / 'file1.txt', 'file1\n')
+        self.assertEqual(res[1]['file_path'], str(testdir2 / 'file2.txt'))
+        self._check_file_contents(testdir2 / 'file2.txt', 'file2\n')
+        self.assertEqual(res[2]['file_path'], str(testdir3 / 'tar1.tar'))
+        self._check_file_contents(testdir3 / 'tar1' / 'file1.txt', 'file1\n')
+        self._check_file_contents(testdir3 / 'tar1' / 'file2.txt', 'file2\n')
+        self.assertEqual(res[3]['file_path'], str(testdir4 / 'zip1.zip'))
+        self._check_file_contents(testdir4 / 'tar1' / 'file1.txt', 'file1\n')
+        self._check_file_contents(testdir4 / 'tar1' / 'file2.txt', 'file2\n')
+        self.assertEqual(res[4]['file_path'], str(testdir5 / 'file2.txt'))
+        self._check_file_contents(testdir5 / 'file2.txt', 'file2\n')
+
+    def test_unpack_files_fail_no_params(self):
+        for p in [None, []]:
+            self.fail_unpack_files(
+                p, "Must provide at least one input parameter dictionary in a list")
+
+    def test_unpack_files_fail_no_file_path(self):
+        testdir1 = self._make_temp_dir(Path(self.cfg['scratch']))
+        shutil.copy(Path('./data') / 'file1.txt.gz', testdir1)
+        shutil.copy(Path('./data') / 'file2.txt.gz', testdir1)
+        self.fail_unpack_files(
+            [
+                {
+                    'file_path': testdir1 / 'file1.txt.gz'
+                },
+                {
+                    'file_path': testdir1 / 'file2.txt.gz'
+                },
+                {
+                    'file_path': ''
+                },
+            ],
+            "Must provide file path for param #3")
+
+    def test_unpack_files_fail_bad_unpack_param(self):
+        testdir1 = self._make_temp_dir(Path(self.cfg['scratch']))
+        shutil.copy(Path('./data') / 'file1.txt.gz', testdir1)
+        self.fail_unpack_files(
+            [
+                {
+                    'file_path': testdir1 / 'file1.txt.gz'
+                },
+                {
+                    'file_path': testdir1 / 'file2.txt.gz',
+                    'unpack': 'unzip'
+                },
+                {
+                    'file_path': testdir1 / 'file1.txt.gz.bar'
+                },
+            ],
+            "Illegal unpack value for param #2: unzip")
+
+    def test_unpack_files_fail_no_file(self):
+        testdir1 = self._make_temp_dir(Path(self.cfg['scratch']))
+        shutil.copy(Path('./data') / 'file1.txt.gz', testdir1)
+        self.fail_unpack_files(
+            [
+                {
+                    'file_path': testdir1 / 'file1.txt.gz'
+                },
+                {
+                    'file_path': testdir1 / 'file1.txt.gz.foo'
+                },
+                {
+                    'file_path': testdir1 / 'file1.txt.gz.bar'
+                },
+            ],
+            "Error unpacking file from param #2: \\[Errno 2\\] No such file or directory: '" +
+            f"{testdir1}/file1.txt.gz.foo'")
+
+    def _check_file_contents(self, filepath: Path, contents: str):
+        with open(filepath) as f:
+            got = f.read()
+        self.assertEqual(got, contents)
+
+    def _make_temp_dir(self, root: Path):
+        td = root / str(uuid.uuid4())
+        os.makedirs(td)
+        return td
 
     def write_file(self, filename, content):
         tmp_dir = self.cfg['scratch']
@@ -1219,6 +1340,10 @@ class DataFileUtilTest(unittest.TestCase):
     def fail_pack(self, params, error, exception=ValueError):
         with self.assertRaisesRegex(exception, error):
             self.impl.pack_file(self.ctx, params)
+
+    def fail_unpack_files(self, params, error, exception=ValueError):
+        with self.assertRaisesRegex(exception, error):
+            self.impl.unpack_files(self.ctx, params)
 
     def fail_save_objects(self, params, error, exception=ValueError):
         with self.assertRaisesRegex(exception, error):
