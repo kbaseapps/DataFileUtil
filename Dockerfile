@@ -1,24 +1,18 @@
-FROM kbase/sdkbase2:python
+FROM kbase/sdkpython:3.8.10
 MAINTAINER KBase Developer
-# -----------------------------------------
 
-# Insert apt-get instructions here to install
-# any required dependencies for your module.
-
-# RUN apt-get update
+RUN apt-get update
+RUN apt-get install pigz wget nano
 
 RUN pip install semver \
     && ( [ $(pip show filemagic|grep -c filemagic) -eq 0 ] || pip uninstall -y filemagic ) \
     && pip install python-magic \
     && pip install ftputil \
-    && pip install ipython==5.3.0 \
+    && pip install ipython \
     && pip install pyftpdlib==1.5.6 \
-    && sudo apt-get install nano
-# -----------------------------------------
+    && pip install google-api-python-client \
+    && pip install bz2file 
 
-RUN sudo apt-get update
-RUN sudo apt-get install pigz wget
-RUN pip install bz2file
 
 COPY ./ /kb/module
 RUN mkdir -p /kb/module/work
