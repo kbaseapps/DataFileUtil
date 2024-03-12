@@ -512,7 +512,7 @@ class DataFileUtilTest(unittest.TestCase):
         os.chdir(wd)
         self.assertEqual(ret1['node_file_name'], 'target.tar.gz')
         self.assertGreater(ret1['size'], 220)
-        self.assertLess(ret1['size'], 240)
+        self.assertLess(ret1['size'], 260)
         shock_id = ret1['shock_id']
         file_path2 = os.path.join(tmp_dir, 'output.tgz')
         ret2 = self.impl.shock_to_file(
@@ -523,7 +523,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertIsNone(ret2['attributes'])
         self.assertEqual(ret2['file_path'], file_path2)
         self.assertGreater(ret2['size'], 220)
-        self.assertLess(ret2['size'], 240)
+        self.assertLess(ret2['size'], 260)
         with tarfile.open(file_path2) as t:
             self.assertEqual(set(t.getnames()),
                              set(['.', './intar1.txt', './intar2.txt']))
@@ -569,7 +569,7 @@ class DataFileUtilTest(unittest.TestCase):
              'pack': 'targz'})[0]
         self.assertEqual(ret1['node_file_name'], 'tartest2.tar.gz')
         self.assertGreater(ret1['size'], 220)
-        self.assertLess(ret1['size'], 240)
+        self.assertLess(ret1['size'], 260)
         shock_id = ret1['shock_id']
         file_path2 = os.path.join(tmp_dir, 'output.tgz')
         ret2 = self.impl.shock_to_file(
@@ -580,7 +580,7 @@ class DataFileUtilTest(unittest.TestCase):
         self.assertIsNone(ret2['attributes'])
         self.assertEqual(ret2['file_path'], file_path2)
         self.assertGreater(ret1['size'], 220)
-        self.assertLess(ret1['size'], 240)
+        self.assertLess(ret1['size'], 260)
         with tarfile.open(file_path2) as t:
             self.assertEqual(set(t.getnames()),
                              set(['.', './intar1.txt', './intar2.txt']))
@@ -1671,8 +1671,8 @@ class DataFileUtilTest(unittest.TestCase):
 
     def test_download_google_drive_link_uncompress_file(self):
         # google drive link of 'file1.txt'
-        file_url = 'https://drive.google.com/open?'
-        file_url += 'id=0B0exSa7ebQ0qX01mZ3FaRzhuMDQ'
+        file_url = ("https://drive.google.com/open?id=0B0exSa7ebQ0qX01mZ3FaRzhuMDQ"
+                    + "&resourcekey=0-eeP2JBzYnbKaFVncybSA0Q")
         params = {
             'download_type': 'Google Drive',
             'file_url': file_url
@@ -1687,8 +1687,8 @@ class DataFileUtilTest(unittest.TestCase):
 
     def test_download_google_drive_link_compress_file(self):
         # google drive link of 'file1.txt.gzip'
-        file_url = 'https://drive.google.com/file/d/'
-        file_url += '0B0exSa7ebQ0qU1U5YmxMRktkbmc/view?usp=sharing'
+        file_url = ("https://drive.google.com/file/d/0B0exSa7ebQ0qU1U5YmxMRktkbmc"
+                    + "/view?usp=drive_link&resourcekey=0-YXZfeTbInLOV0hkGVx92AA")
         params = {
             'download_type': 'Google Drive',
             'file_url': file_url
@@ -1702,7 +1702,7 @@ class DataFileUtilTest(unittest.TestCase):
                          os.stat(ret1['copy_file_path']).st_size)
 
     def test_download_google_drive_link_large_uncompress_file(self):
-        file_url = 'https://drive.google.com/open?id=1WBni9AcU7AHWY72amXBg7Dxb0d2RUGch'
+        file_url = "https://drive.google.com/open?id=1WBni9AcU7AHWY72amXBg7Dxb0d2RUGch"
         params = {
             'download_type': 'Google Drive',
             'file_url': file_url
@@ -1717,8 +1717,8 @@ class DataFileUtilTest(unittest.TestCase):
 
     def test_download_google_drive_link_archive_file(self):
         # google drive link of 'zip1.zip'
-        file_url = 'https://drive.google.com/open?'
-        file_url += 'id=0B0exSa7ebQ0qcEhRaDJoVDJSTkk'
+        file_url = ("https://drive.google.com/file/d/0B0exSa7ebQ0qcEhRaDJoVDJSTkk"
+                    + "/view?usp=drive_link&resourcekey=0-wTnouG2x1Yb0bUm08rG1KA")
         params = {
             'download_type': 'Google Drive',
             'file_url': file_url

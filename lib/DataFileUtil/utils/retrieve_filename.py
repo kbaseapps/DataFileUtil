@@ -1,7 +1,9 @@
 """
 Fetch the file name from a remote URL.
 """
+from email.message import Message
 from requests.cookies import RequestsCookieJar
+from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 from uuid import uuid4
@@ -10,6 +12,9 @@ import requests
 
 # Local
 from DataFileUtil.implementation import log
+
+
+_CONTENT_DISPOSITION = 'content-disposition'
 
 
 def retrieve_filename(file_url: str, cookies: Optional[RequestsCookieJar] = None) -> str:
@@ -26,15 +31,17 @@ def retrieve_filename(file_url: str, cookies: Optional[RequestsCookieJar] = None
     """
     try:
         # Fetch the headers
+        # Not sure how expensive this is for us and and the remote host, but head doesn't
+        # get the content dispo header
         with requests.get(file_url, cookies=cookies, stream=True) as response:
             try:
-                content_disposition = response.headers['content-disposition']
+                content_disposition = response.headers[_CONTENT_DISPOSITION]
             except KeyError:
                 log('Parsing file name directly from URL')
                 url = urlparse(file_url)
                 file_name = os.path.basename(url.path)
             else:
-                file_name = content_disposition.split('filename="')[-1].split('";')[0]
+                file_name = _get_filename_from_header(response)
     except Exception as error:
         error_msg = 'Cannot connect to URL: {}\n'.format(file_url)
         error_msg += 'Exception: {}'.format(error)
@@ -51,3 +58,12 @@ def retrieve_filename(file_url: str, cookies: Optional[RequestsCookieJar] = None
         file_name = str(uuid4())
     log(f'Retrieved file name: {file_name}')
     return file_name
+
+
+def _get_filename_from_header(response):
+    # https://stackoverflow.com/a/78073510/643675
+    # https://peps.python.org/pep-0594/#cgi
+    m = Message()
+    m[_CONTENT_DISPOSITION] = response.headers[_CONTENT_DISPOSITION]
+    return Path(m.get_filename()).name
+    

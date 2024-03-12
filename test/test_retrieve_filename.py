@@ -69,3 +69,23 @@ class RetrieveFilenameTest(unittest.TestCase):
         expected_fn = given_fn[0:255]
         fn = retrieve_filename(url)
         self.assertEqual(fn, expected_fn)
+        
+    def test_filename_google(self):
+        """
+        Test a google downloaded file, which has a different content disposition header
+        than box.com and broke an older implementation of the header parser.
+        """
+        url = "https://docs.google.com/uc?export=download&id=1iPE1Mw6m91ONfm-Z4WpxDGTXX_BKADH8"
+        expected_filename = "Sample1.fastq.gz"
+        fn = retrieve_filename(url)
+        self.assertEqual(fn, expected_filename)
+
+    @unittest.skip("Eventually redirects to a 200 auth page. Need to do something very different")
+    def test_filename_google_inaccessible(self):
+        """
+        Test a non-public google downloaded file
+        """
+        url = "https://docs.google.com/uc?export=download&id=197Bp6PuiEiuCvOUulvo8jQiiv2bhQj9o"
+        expected_filename = "Sample1.fastq.gz"
+        fn = retrieve_filename(url)
+        self.assertEqual(fn, expected_filename)
