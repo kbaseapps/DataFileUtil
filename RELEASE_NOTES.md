@@ -1,3 +1,9 @@
+# 0.2.1
+
+- fixed several bugs regarding downloading files from Google Drive. How long the current method
+  will continue to work is unknown.
+- updates python to 3.8.10 by updating the base image.
+
 # 0.2.0
 - added `unpack_files` function
 
