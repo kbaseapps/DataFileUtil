@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+import urllib.parse as urlparse
 import uuid
 import zipfile
 
@@ -460,16 +461,6 @@ archiving.
 
         return copy_file_path
 
-    def _get_google_confirm_token(self, response):
-        """
-        _get_google_confirm_token: get Google drive confirm token for large file
-        """
-        for key, value in response.cookies.items():
-            if key.startswith('download_warning'):
-                return value
-
-        return None
-
     def _download_google_drive_to_file(self, file_url, cookies=None):
         """
         _download_google_drive_to_file: download url content to file
@@ -504,36 +495,42 @@ archiving.
         file_url: Google Drive download link
 
         """
+        # TODO all this should be rewritten with the google drive libs, super fragile as is
         if not file_url.startswith('https://drive.google.com/'):
-            raise ValueError('Invalid Google Drive Link: {}'.format(file_url))
+            raise ValueError(f'Invalid Google Drive Link: {file_url}')
+        log(f'Connecting Google Drive link: {file_url}')
 
-        log('Connecting Google Drive link: {}'.format(file_url))
         # translate Google Drive URL for direct download
-        force_download_link_prefix = 'https://docs.google.com/uc?export=download'
+        force_download_link_prefix = 'https://drive.usercontent.google.com/download?'
+        parsedurl = urlparse.urlparse(file_url)
+        query = {}
+        if parsedurl.query:
+            # should we catch an error here?
+            query = urlparse.parse_qs(parsedurl.query, strict_parsing=True)
 
-        if file_url.find('drive.google.com/file/d/') != -1:
+        if query.get("id"):
+            file_id = query["id"][0]  # assume only 1 id
+        elif file_url.find('drive.google.com/file/d/') != -1:
             file_id = file_url.partition('/d/')[-1].partition('/')[0]
-        elif file_url.find('drive.google.com/open?id=') != -1:
-            file_id = file_url.partition('id=')[-1]
         else:
             error_msg = 'Unexpected Google Drive share link.\n'
             error_msg += 'URL: {}'.format(file_url)
             raise ValueError(error_msg)
+        
+        # This deliberately drops other query parameters... which may or may not be a good idea.
+        # The URLs returned from Google have other parameters that aren't needed here
+        # https://gist.github.com/tanaikech/f0f2d122e05bf5f971611258c22c110f#updated-at-january-21-2024
+        new_query = {"id": file_id, "export": "download", "confirm": "x"}
+        if query.get("resourcekey"):
+            new_query["resourcekey"] = query["resourcekey"][0]  # assume only 1 key
+        querystr = "&".join([f"{k}={v}" for k, v in new_query.items()])
+        force_download_link = force_download_link_prefix + querystr
 
-        force_download_link = force_download_link_prefix + '&id={}'.format(file_id)
+        log('Generating Google Drive direct download link\n' +
+            ' from: {}\n to: {}'.format(file_url, force_download_link))
 
-        with requests.Session() as session:
-            response = session.get(force_download_link)
-            confirm_token = self._get_google_confirm_token(response)
-
-            if confirm_token:
-                force_download_link = force_download_link_prefix + '&confirm={}&id={}'.format(confirm_token, file_id)
-
-            log('Generating Google Drive direct download link\n' +
-                ' from: {}\n to: {}'.format(file_url, force_download_link))
-
-            copy_file_path = self._download_google_drive_to_file(force_download_link, response.cookies)
-            copy_file_path = self._unpack(copy_file_path, True)
+        copy_file_path = self._download_google_drive_to_file(force_download_link)
+        copy_file_path = self._unpack(copy_file_path, True)
 
         return copy_file_path
 

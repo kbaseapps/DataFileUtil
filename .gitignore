@@ -2,3 +2,6 @@ test_local
 sdk.cfg
 /run_local/
 *.py.bak-*
+/.settings/
+/.project
+/.pydevproject
