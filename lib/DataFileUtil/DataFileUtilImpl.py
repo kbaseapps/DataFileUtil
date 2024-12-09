@@ -61,9 +61,9 @@ archiving.
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.2.0"
+    VERSION = "0.2.2"
     GIT_URL = "https://github.com/kbaseapps/DataFileUtil.git"
-    GIT_COMMIT_HASH = "579a0928d7f4ce3713e31adfea216815110ecd5e"
+    GIT_COMMIT_HASH = "0d855560a37f8787ab3bb67e464b9c94b299764e"
 
     #BEGIN_CLASS_HEADER
 
@@ -308,9 +308,8 @@ archiving.
             try:
                 err = json.loads(response.content)['error'][0]
             except Exception:
-                # this means shock is down or not responding.
-                log("Couldn't parse response error content from Shock: " +
-                    response.content)
+                # this means the Blobstore is down or not responding.
+                log("Couldn't parse response error content from the Blobstore: " + response.text)
                 response.raise_for_status()
             raise ShockException(errtxt + str(err))
 
@@ -636,7 +635,7 @@ archiving.
         # note that the unit tests cannot easily test this. Be careful with changes here
         with requests.get(config['kbase-endpoint'] + '/shock-direct', allow_redirects=False) as r:
             if r.status_code == 302:
-                log('Using direct shock url for transferring files')
+                log('Using direct Blobstore url for transferring files')
                 self.shock_effective = r.headers['Location']
         log('Shock url: ' + self.shock_effective)
         self.handle_url = config['handle-service-url']
@@ -696,10 +695,10 @@ archiving.
         shock_id = params.get('shock_id')
         handle_id = params.get('handle_id')
         if not shock_id and not handle_id:
-            raise ValueError('Must provide shock ID or handle ID')
+            raise ValueError('Must provide Blobstore ID or handle ID')
         if shock_id and handle_id:
             raise ValueError(
-                'Must provide either a shock ID or handle ID, not both')
+                'Must provide either a Blobstore ID or handle ID, not both')
 
         shock_url = self.shock_effective
         if handle_id:
@@ -716,8 +715,7 @@ archiving.
         self.mkdir_p(os.path.dirname(file_path))
         node_url = shock_url + '/node/' + shock_id
         r = requests.get(node_url, headers=headers, allow_redirects=True)
-        errtxt = ('Error downloading file from shock ' +
-                  'node {}: ').format(shock_id)
+        errtxt = f'Error downloading file from Blobstore node {shock_id}: '
         self.check_shock_response(r, errtxt)
         resp_obj = r.json()
         size = resp_obj['data']['file']['size']
@@ -727,7 +725,7 @@ archiving.
         attributes = resp_obj['data']['attributes']
         if os.path.isdir(file_path):
             file_path = os.path.join(file_path, node_file_name)
-        log('downloading shock node ' + shock_id + ' into file: ' + str(file_path))
+        log('downloading Blobstore node ' + shock_id + ' into file: ' + str(file_path))
         with open(file_path, 'wb') as fhandle:
             with requests.get(node_url + '?download_raw', stream=True,
                               headers=headers, allow_redirects=True) as r:
@@ -863,11 +861,11 @@ archiving.
         headers = {'Authorization': 'Oauth ' + token}
         file_path = params.get('file_path')
         if not file_path:
-            raise ValueError('No file(s) provided for upload to Shock.')
+            raise ValueError('No file(s) provided for upload to the Blobstore.')
         pack = params.get('pack')
         if pack:
             file_path = self._pack(file_path, pack)
-        log('uploading file ' + str(file_path) + ' into shock node')
+        log('uploading file ' + str(file_path) + ' into Blobstore node')
         with open(os.path.abspath(file_path), 'rb') as data_file:
             # Content-Length header is required for transition to
             # https://github.com/kbase/blobstore
@@ -879,7 +877,7 @@ archiving.
                 self.shock_effective + '/node', headers=headers, data=mpe,
                 stream=True, allow_redirects=True)
         self.check_shock_response(
-            response, ('Error trying to upload file {} to Shock: '
+            response, ('Error trying to upload file {} to Blobstore: '
                        ).format(file_path))
         shock_data = response.json()['data']
         shock_id = shock_data['id']
@@ -889,7 +887,7 @@ archiving.
                'size': shock_data['file']['size']}
         if params.get('make_handle'):
             out['handle'] = self.make_handle(shock_data, token)
-        log('uploading done into shock node: ' + shock_id)
+        log('uploading done into Blobstore node: ' + shock_id)
         #END file_to_shock
 
         # At some point might do deeper type checking...
@@ -958,8 +956,10 @@ archiving.
            String, parameter "unpack" of String
         :returns: instance of list of type "UnpackFilesResult" (Output
            parameters for the unpack_files function. file_path - the path to
-           the unpacked file, or in the case of archive files, the path to
-           the original archive file.) -> structure: parameter "file_path" of
+           either a) the unpacked file or b) in the case of archive files,
+           the path to the original archive file, possibly uncompressed, or
+           c) in the case of regular files that don't need processing, the
+           path to the input file.) -> structure: parameter "file_path" of
            String
         """
         # ctx is the context object
@@ -1206,15 +1206,13 @@ archiving.
         header = {'Authorization': 'Oauth {}'.format(token)}
         source_id = params.get('shock_id')
         if not source_id:
-            raise ValueError('Must provide shock ID')
+            raise ValueError('Must provide Blobstore ID')
         mpdata = MultipartEncoder(fields={'copy_data': source_id})
         header['Content-Type'] = mpdata.content_type
 
         with requests.post(self.shock_url + '/node', headers=header, data=mpdata,
                            allow_redirects=True) as response:
-            self.check_shock_response(
-                response, ('Error copying Shock node {}: '
-                           ).format(source_id))
+            self.check_shock_response(response, f'Error copying Blobstore node {source_id}: ')
             shock_data = response.json()['data']
         shock_id = shock_data['id']
         out = {'shock_id': shock_id, 'handle': None}
@@ -1270,11 +1268,10 @@ archiving.
         header = {'Authorization': 'Oauth {}'.format(token)}
         source_id = params.get('shock_id')
         if not source_id:
-            raise ValueError('Must provide shock ID')
+            raise ValueError('Must provide Blobstore ID')
         with requests.get(self.shock_url + '/node/' + source_id + '/acl/?verbosity=full',
                           headers=header, allow_redirects=True) as res:
-            self.check_shock_response(
-                res, 'Error getting ACLs for Shock node {}: '.format(source_id))
+            self.check_shock_response(res, f'Error getting ACLs for Blobstore node {source_id}: ')
             owner = res.json()['data']['owner']['username']
         if owner != ctx['user_id']:
             out = self.copy_shock_node(ctx, params)[0]
@@ -1292,8 +1289,7 @@ archiving.
                 # meh
                 with requests.get(self.shock_url + '/node/' + source_id,
                                   headers=header, allow_redirects=True) as r:
-                    errtxt = ('Error downloading attributes from shock ' +
-                              'node {}: ').format(source_id)
+                    errtxt = f'Error downloading attributes from Blobstore node {source_id}: '
                     self.check_shock_response(r, errtxt)
                     out = {'shock_id': source_id,
                            'handle': self.make_handle(r.json()['data'], token)}
@@ -1503,7 +1499,7 @@ archiving.
         del ctx
         wsver = Workspace(self.ws_url).ver()
         with requests.get(self.shock_url, allow_redirects=True) as resp:
-            self.check_shock_response(resp, 'Error contacting Shock: ')
+            self.check_shock_response(resp, 'Error contacting the Blobstore: ')
             shockver = resp.json()['version']
         #END versions
 
