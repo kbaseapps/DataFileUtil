@@ -1,3 +1,9 @@
+# 0.2.2
+
+- Fixed a bug where if the Blobstore returned an non-json response, logging the response would
+  fail due to attempting to concatenate string and binary types. This would shadow the real
+  error returned from the Blobstore.
+
 # 0.2.1
 
 - fixed several bugs regarding downloading files from Google Drive. How long the current method

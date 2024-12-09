@@ -205,8 +205,10 @@ class DataFileUtil(object):
            String, parameter "unpack" of String
         :returns: instance of list of type "UnpackFilesResult" (Output
            parameters for the unpack_files function. file_path - the path to
-           the unpacked file, or in the case of archive files, the path to
-           the original archive file.) -> structure: parameter "file_path" of
+           either a) the unpacked file or b) in the case of archive files,
+           the path to the original archive file, possibly uncompressed, or
+           c) in the case of regular files that don't need processing, the
+           path to the input file.) -> structure: parameter "file_path" of
            String
         """
         return self._client.run_job('DataFileUtil.unpack_files',

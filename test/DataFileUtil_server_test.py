@@ -105,7 +105,7 @@ class DataFileUtilTest(unittest.TestCase):
         header = {'Authorization': 'Oauth {0}'.format(cls.token)}
         requests.delete(cls.shockURL + '/node/' + node_id, headers=header,
                         allow_redirects=True)
-        print(('Deleted shock node ' + node_id))
+        print(('Deleted Blobstore node ' + node_id))
 
     def test_file_to_shock_and_back_by_handle(self):
         input_ = "Test!!!"
@@ -723,7 +723,7 @@ class DataFileUtilTest(unittest.TestCase):
     def test_upload_err_no_file_provided(self):
         self.fail_upload(
             {'file_path': ''},
-            'No file\(s\) provided for upload to Shock')
+            'No file\(s\) provided for upload to the Blobstore')
 
     def test_upload_err_bad_pack_param(self):
         self.fail_upload(
@@ -918,7 +918,7 @@ class DataFileUtilTest(unittest.TestCase):
             {'shock_id': '79261fd9-ae10-4a84-853d-1b8fcd57c8f23',
              'file_path': 'foo'
              },
-            'Error downloading file from shock node ' +
+            'Error downloading file from Blobstore node ' +
             '79261fd9-ae10-4a84-853d-1b8fcd57c8f23: Node not found',
             exception=ShockException)
     
@@ -927,7 +927,7 @@ class DataFileUtilTest(unittest.TestCase):
             {'shock_id': '',
              'file_path': 'foo'
              },
-            'Must provide shock ID or handle ID')
+            'Must provide Blobstore ID or handle ID')
 
     def test_download_err_no_file_provided(self):
         self.fail_download(
@@ -994,14 +994,14 @@ class DataFileUtilTest(unittest.TestCase):
     def test_copy_err_node_not_found(self):
         self.fail_copy(
             {'shock_id': '79261fd9-ae10-4a84-853d-1b8fcd57c8f23'},
-            'Error copying Shock node ' +
+            'Error copying Blobstore node ' +
             '79261fd9-ae10-4a84-853d-1b8fcd57c8f23: ' +
             'Invalid copy_data: invalid UUID length: 37',
             exception=ShockException)
 
     def test_copy_err_no_node_provided(self):
         self.fail_copy(
-            {'shock_id': ''}, 'Must provide shock ID')
+            {'shock_id': ''}, 'Must provide Blobstore ID')
 
     def test_own_node_owned_with_existing_handle(self):
         fp = self.write_file('ownfile23.txt', 'ownfile23')
@@ -1080,13 +1080,13 @@ class DataFileUtilTest(unittest.TestCase):
     def test_own_err_node_not_found(self):
         self.fail_own(
             {'shock_id': '79261fd9-ae10-4a84-853d-1b8fcd57c8f23'},
-            'Error getting ACLs for Shock node ' +
+            'Error getting ACLs for Blobstore node ' +
             '79261fd9-ae10-4a84-853d-1b8fcd57c8f23: Node not found',
             exception=ShockException)
 
     def test_own_err_no_node_provided(self):
         self.fail_own(
-            {'shock_id': ''}, 'Must provide shock ID')
+            {'shock_id': ''}, 'Must provide Blobstore ID')
 
     def test_translate_ws_name(self):
         self.assertEqual(self.impl.ws_name_to_id(self.ctx, self.ws_info[1])[0],
