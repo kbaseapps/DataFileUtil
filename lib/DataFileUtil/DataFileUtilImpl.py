@@ -63,7 +63,7 @@ archiving.
     ######################################### noqa
     VERSION = "0.2.2"
     GIT_URL = "https://github.com/kbaseapps/DataFileUtil.git"
-    GIT_COMMIT_HASH = "0d855560a37f8787ab3bb67e464b9c94b299764e"
+    GIT_COMMIT_HASH = "8645c467e40937a79fd8ebea3aecb853f5fec048"
 
     #BEGIN_CLASS_HEADER
 

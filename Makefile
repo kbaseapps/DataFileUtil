@@ -20,11 +20,11 @@ all: compile build build-startup-script build-executable-script build-test-scrip
 compile:
 	kb-sdk compile $(SPEC_FILE) \
 		--out $(LIB_DIR) \
-		--clasyncver \
-		--html \
+		--clasyncver release \
 		--pyclname $(SERVICE_CAPS).$(SERVICE_CAPS)Client \
 		--pyimplname $(SERVICE_CAPS).$(SERVICE_CAPS)Impl \
 		--pysrvname $(SERVICE_CAPS).$(SERVICE_CAPS)Server
+	kb-sdk compile $(SPEC_FILE) --html
 
 build:
 	chmod +x $(SCRIPTS_DIR)/entrypoint.sh
